@@ -24,17 +24,21 @@ public class NativeSwiftFileSystemContractBaseTest extends FileSystemContractBas
     final Configuration conf = new Configuration();
 
     swiftFileSystem = new SwiftNativeFileSystem(uri, conf, new InMemorySwiftNativeStore());
+    //propagate to parent
+    fs = swiftFileSystem;
+    super.setUp();
   }
 
   @Override
   public void tearDown() throws Exception {
+    super.tearDown();
   }
 
   public void testCreateFile() throws Exception {
     final Path f = new Path("/home/user");
     swiftFileSystem.create(f);
 
-    assertTrue(swiftFileSystem.exists(f));
+    assertTrue("Created path does not exist", swiftFileSystem.exists(f));
   }
 
   public void testDeleteFile() throws IOException {
@@ -46,7 +50,7 @@ public class NativeSwiftFileSystemContractBaseTest extends FileSystemContractBas
 
     swiftFileSystem.delete(f, true);
     final boolean exists = swiftFileSystem.exists(f);
-    assertFalse(exists);
+    assertFalse("file was not deleted", exists);
   }
 
   public void testWriteReadFile() throws Exception {

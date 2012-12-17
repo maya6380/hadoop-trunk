@@ -51,6 +51,8 @@ public class SwiftNativeFileSystem extends FileSystem {
     setConf(conf);
     this.conf = conf;
     this.nativeStore = nativeStore;
+    this.uri = URI.create(String.format("swift://%s:%d", uri.getHost(), uri.getPort()));
+    this.workingDir = new Path("/user", System.getProperty("user.name"));
   }
 
   /**
