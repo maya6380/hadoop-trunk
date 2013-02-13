@@ -20,6 +20,8 @@ package org.apache.hadoop.yarn.service;
 
 import org.apache.hadoop.conf.Configuration;
 
+import java.util.List;
+
 public class FilterService implements Service {
 
   private final Service service;
@@ -72,5 +74,30 @@ public class FilterService implements Service {
   @Override
   public long getStartTime() {
     return startTime;
+  }
+
+  @Override
+  public boolean inState(STATE state) {
+    return service.inState(state);
+  }
+
+  @Override
+  public Throwable getFailureCause() {
+    return service.getFailureCause();
+  }
+
+  @Override
+  public STATE getFailureState() {
+    return service.getFailureState();
+  }
+
+  @Override
+  public boolean waitForServiceToStop(long timeout) {
+    return service.waitForServiceToStop(timeout);
+  }
+
+  @Override
+  public List<LifecycleEvent> getLifecycleHistory() {
+    return service.getLifecycleHistory();
   }
 }
