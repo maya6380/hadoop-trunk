@@ -21,6 +21,11 @@ package org.apache.hadoop.yarn.service;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.util.ShutdownHookManager;
+
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class contains a set of methods to work with services, especially
@@ -50,6 +55,26 @@ public final class ServiceOperations {
   }
 
   /**
+   * Check that a state tansition is valid and
+   * throw an exception if not
+   * @param state current state
+   * @param proposed proposed new state
+   */
+  public static void checkStateTransition(Service.STATE state, Service.STATE proposed) {
+    ServiceStateModel.checkStateTransition(state, proposed);
+  }
+
+  /**
+   * Check that a state tansition is valid and 
+   * throw an exception if not
+   * @param service the service to probe
+   * @param proposed proposed new state
+   */
+  public static void checkStateTransition(Service service, Service.STATE proposed) {
+    ServiceStateModel.checkStateTransition(service.getServiceState(), proposed);
+  }
+
+  /**
    * Initialize a service.
    * <p/>
    * The service state is checked <i>before</i> the operation begins.
@@ -62,8 +87,7 @@ public final class ServiceOperations {
    */
 
   public static void init(Service service, Configuration configuration) {
-    Service.STATE state = service.getServiceState();
-    ensureCurrentState(state, Service.STATE.NOTINITED);
+    checkStateTransition(service, Service.STATE.INITED);
     service.init(configuration);
   }
 
@@ -79,8 +103,7 @@ public final class ServiceOperations {
    */
 
   public static void start(Service service) {
-    Service.STATE state = service.getServiceState();
-    ensureCurrentState(state, Service.STATE.INITED);
+    checkStateTransition(service, Service.STATE.STARTED);
     service.start();
   }
 
@@ -112,7 +135,7 @@ public final class ServiceOperations {
   public static void stop(Service service) {
     if (service != null) {
       Service.STATE state = service.getServiceState();
-      if (state == Service.STATE.STARTED) {
+      if (ServiceStateModel.isValidStateTransition(state, Service.STATE.STOPPED)) {
         service.stop();
       }
     }
@@ -126,15 +149,108 @@ public final class ServiceOperations {
    * @param service a service; may be null
    * @return any exception that was caught; null if none was.
    */
-  public static Exception stopQuietly(Service service) {
+  public static Throwable stopQuietly(Service service) {
     try {
       stop(service);
-    } catch (Exception e) {
+    } catch (Throwable e) {
       LOG.warn("When stopping the service " + service.getName()
                    + " : " + e,
                e);
       return e;
     }
     return null;
+  }
+
+
+  /**
+   * Class to manage a list of {@link ServiceStateChangeListener} instances,
+   * including a notification loop that is robust against changes to the list
+   * during the notification process.
+   */
+  public static class ServiceListeners {
+    /**
+     * List of state change listeners; it is final to guarantee
+     * that it will never be null.
+     */
+    private final List<ServiceStateChangeListener> listeners =
+      new ArrayList<ServiceStateChangeListener>();
+
+    public synchronized void add(ServiceStateChangeListener l) {
+      listeners.add(l);
+    }
+
+    public synchronized void remove(ServiceStateChangeListener l) {
+      listeners.remove(l);
+    }
+
+    /**
+     * Change to a new state and notify all listeners.
+     * This is a private method that is only invoked from synchronized methods,
+     * which avoid having to clone the listener list. It does imply that
+     * the state change listener methods should be short lived, as they
+     * will delay the state transition.
+     * @param service the service that has changed state
+     */
+    public void notifyListeners(Service service) {
+      //take a very fast snapshot of the callback list
+      //very much like CopyOnWriteArrayList, only more minimal
+      ServiceStateChangeListener[] callbacks;
+      synchronized (this) {
+        callbacks = listeners.toArray(new ServiceStateChangeListener[listeners.size()]);
+      }
+      //iterate through the listeners outside the synchronized method,
+      //ensuring that listener registration/unregistration doesn't break anything
+      for (ServiceStateChangeListener l : callbacks) {
+        l.stateChanged(service);
+      }
+    }
+  }
+
+  /**
+   * JVM Shutdown hook for Service which will stop the
+   * Service gracefully in case of JVM shutdown.
+   * This hook uses a weak reference to the service, so
+   * does not cause services to be retained after they have
+   * been stopped and deferenced elsewhere.
+   */
+  public static class ServiceShutdownHook implements Runnable {
+
+    private WeakReference<Service> serviceRef;
+    private Thread hook;
+
+    public ServiceShutdownHook(Service service) {
+      serviceRef = new WeakReference<Service>(service);
+    }
+
+    public void register(int priority) {
+      unregister();
+      hook = new Thread(this);
+      ShutdownHookManager.get().addShutdownHook(hook, priority);
+    }
+
+    public void unregister() {
+      if (hook != null) {
+        try {
+          ShutdownHookManager.get().removeShutdownHook(hook);
+        } catch (IllegalStateException e) {
+          LOG.info("Failed to unregister shutdown hook",e);
+        }
+        hook = null;
+      }
+    }
+
+    @Override
+    public void run() {
+      Service service = serviceRef.get();
+      if (service == null) {
+        return;
+      }
+      try {
+        // Stop the  Service
+        service.stop();
+      } catch (Throwable t) {
+        LOG.info("Error stopping " + service.getName(), t);
+      }
+    }
   }
 }

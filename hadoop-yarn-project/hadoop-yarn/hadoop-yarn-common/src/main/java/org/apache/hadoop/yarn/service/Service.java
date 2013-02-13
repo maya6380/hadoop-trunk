@@ -20,6 +20,9 @@ package org.apache.hadoop.yarn.service;
 
 import org.apache.hadoop.conf.Configuration;
 
+import java.io.Serializable;
+import java.util.List;
+
 /**
  * Service LifeCycle.
  */
@@ -30,16 +33,42 @@ public interface Service {
    */
   public enum STATE {
     /** Constructed but not initialized */
-    NOTINITED,
+    NOTINITED(0, "NOTINITED"),
 
     /** Initialized but not started or stopped */
-    INITED,
+    INITED(1, "INITED"),
 
     /** started and not stopped */
-    STARTED,
+    STARTED(2, "STARTED"),
 
     /** stopped. No further state transitions are permitted */
-    STOPPED
+    STOPPED(3, "STOPPED");
+
+    /**
+     * An integer value for use in array lookup and JMX interfaces.
+     * Although {@link Enum#ordinal()} could do this, explicitly
+     * identify the numbers gives more stability guarantees over time.
+     */
+    private final int value;
+    
+    /**
+     * A name of the state that can be used in messages
+     */
+    private final String statename;
+
+    private STATE(int value, String name) {
+      this.value = value;
+      this.statename = name;
+    }
+
+    public int getValue() {
+      return value;
+    }
+
+    @Override
+    public String toString() {
+      return statename;
+    }
   }
 
   /**
@@ -108,4 +137,62 @@ public interface Service {
    * has not yet been started.
    */
   long getStartTime();
+
+  /**
+   * Query to see if the service is in a specific state. 
+   * In a multi-threaded system, the state may not hold for very long.
+   * @param state the expected state
+   * @return true if, at the time of invocation, the service was in that state.
+   */
+  boolean inState(STATE state);
+
+  /**
+   * Get the first exception raised during the service failure. If null, no exception was logged
+   * @return the failure logged during a transition to the stopped state
+
+   */
+  Throwable getFailureCause();
+
+  /**
+   * Get the state in which the failure in {@link #getFailureCause()} occurred.
+   * @return the state or null if there was no failure
+   */
+  STATE getFailureState();
+
+  /**
+   * Block waiting for the service to stop; uses the termination notification
+   * object to do so. 
+   *
+   * This method will only return after all the service stop actions
+   * have been executed (to success or failure), or the timeout elapsed
+   * This method can be called before the service is inited or started; this is
+   * to eliminate any race condition with the service stopping before
+   * this event occurs.
+   * @param timeout timeout in milliseconds. A value of zero means "forever"
+   * @return true iff the service stopped in the time period
+   */
+  boolean waitForServiceToStop(long timeout);
+
+  /**
+   * Get a snapshot of the lifecycle history; it is a static list
+   * @return a possibly empty but never null list of lifecycle events.
+   */
+  public List<LifecycleEvent> getLifecycleHistory();
+
+  /**
+   * A serializable lifecycle event: the time a state
+   * transition occurred, and what state was entered.
+   */
+  public class LifecycleEvent implements Serializable {
+    /**
+     * Local time in milliseconds when the event occurred 
+     */
+    public long time;
+    /**
+     * new state
+     */
+    public Service.STATE state;
+  }
+
+
 }

@@ -20,6 +20,7 @@ package org.apache.hadoop.yarn.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -29,10 +30,8 @@ public abstract class AbstractService implements Service {
 
   private static final Log LOG = LogFactory.getLog(AbstractService.class);
 
-  /**
-   * Service state: initially {@link STATE#NOTINITED}.
-   */
-  private STATE state = STATE.NOTINITED;
+  /** service state */
+  private final ServiceStateModel stateModel = new ServiceStateModel();
 
   /**
    * Service name.
@@ -46,14 +45,44 @@ public abstract class AbstractService implements Service {
   /**
    * The configuration. Will be null until the service is initialized.
    */
-  private Configuration config;
+  private volatile Configuration config;
 
   /**
    * List of state change listeners; it is final to ensure
    * that it will never be null.
    */
-  private List<ServiceStateChangeListener> listeners =
-    new ArrayList<ServiceStateChangeListener>();
+  private final ServiceOperations.ServiceListeners listeners
+    = new ServiceOperations.ServiceListeners();
+  /**
+   * Static listeners to all events across all services
+   */
+  private static ServiceOperations.ServiceListeners globalListeners
+    = new ServiceOperations.ServiceListeners();
+
+  /**
+   * The cause of any failure -will be null.
+   * if a service did not stop due to a failure.
+   */
+  private Exception failureCause;
+
+  /**
+   * the state in which the service was when it failed.
+   * Only valid when the service is stopped due to a failure
+   */
+  private STATE failureState = null;
+
+  /**
+   * object used to co-ordinate {@link #waitForServiceToStop(long)}
+   * across threads.
+   */
+  private final AtomicBoolean terminationNotification =
+    new AtomicBoolean(false);
+
+  /**
+   * History of lifecycle transitions
+   */
+  private final List<LifecycleEvent> lifecycleHistory
+    = new ArrayList<LifecycleEvent>(5);
 
   /**
    * Construct the service.
@@ -64,53 +93,200 @@ public abstract class AbstractService implements Service {
   }
 
   @Override
-  public synchronized STATE getServiceState() {
-    return state;
+  public final STATE getServiceState() {
+    return stateModel.getState();
+  }
+
+  @Override
+  public final synchronized Throwable getFailureCause() {
+    return failureCause;
+  }
+
+  @Override
+  public synchronized STATE getFailureState() {
+    return failureState;
   }
 
   /**
-   * {@inheritDoc}
-   * @throws IllegalStateException if the current service state does not permit
-   * this action
+   * {@inheritDoc} 
+   * This invokes {@link #innerInit} 
+   * @param conf the configuration of the service. This must not be null
+   * @throws ServiceStateException if the configuration was null,
+   * the state change not permitted, or something else went wrong
    */
   @Override
-  public synchronized void init(Configuration conf) {
-    ensureCurrentState(STATE.NOTINITED);
+  public final void init(Configuration conf) {
+    if (conf == null) {
+      throw new ServiceStateException("Cannot initialize service "
+                                      + getName() + ": null configuration");
+    }
+    enterState(STATE.INITED);
     this.config = conf;
-    changeState(STATE.INITED);
-    LOG.info("Service:" + getName() + " is inited.");
+    try {
+      innerInit(conf);
+      notifyListeners();
+    } catch (Exception e) {
+      noteFailure(e);
+      stop();
+      throw ServiceStateException.convert(e);
+    }
   }
 
   /**
    * {@inheritDoc}
-   * @throws IllegalStateException if the current service state does not permit
+   * @throws ServiceStateException if the current service state does not permit
    * this action
    */
   @Override
-  public synchronized void start() {
-    startTime = System.currentTimeMillis();
-    ensureCurrentState(STATE.INITED);
-    changeState(STATE.STARTED);
-    LOG.info("Service:" + getName() + " is started.");
+  public final void start() {
+    //enter the started state
+    stateModel.enterState(STATE.STARTED);
+    try {
+      startTime = System.currentTimeMillis();
+      innerStart();
+      LOG.info("Service " + getName() + " is started");
+      notifyListeners();
+    } catch (Exception e) {
+      noteFailure(e);
+      stop();
+      throw ServiceStateException.convert(e);
+    }
   }
+
 
   /**
    * {@inheritDoc}
-   * @throws IllegalStateException if the current service state does not permit
-   * this action
    */
   @Override
-  public synchronized void stop() {
-    if (state == STATE.STOPPED ||
-        state == STATE.INITED ||
-        state == STATE.NOTINITED) {
-      // already stopped, or else it was never
-      // started (eg another service failing canceled startup)
+  public final void stop() {
+    //this operation is only invoked if the service is not already stopped;
+    // it is not an error
+    //to go STOPPED->STOPPED; you just don't want side effects.
+    if (enterState(STATE.STOPPED) != STATE.STOPPED) {
+      try {
+        innerStop();
+      } catch (Exception e) {
+        //stop-time exceptions are logged if they are the first one,
+        // but not acted on
+        noteFailure(e);
+      } finally {
+        //report that the service has terminated
+        synchronized (terminationNotification) {
+          terminationNotification.set(true);
+          terminationNotification.notifyAll();
+        }
+        //notify anything listening for events
+        notifyListeners();
+      }
+    } else {
+      //already stopped: note it
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Ignoring re-entrant call to stop()");
+      }
+    }
+  }
+
+  /**
+   * Failure handling: record the exception
+   * that triggered it -if there was not one already.
+   * Services are free to call this themselves.
+   * @param exception the exception
+   */
+  protected final void noteFailure(Exception exception) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("noteFailure "+ exception, null);
+    }
+    if (exception == null) {
+      //make sure failure logic doesn't itself cause problems
       return;
     }
-    ensureCurrentState(STATE.STARTED);
-    changeState(STATE.STOPPED);
-    LOG.info("Service:" + getName() + " is stopped.");
+    //record the failure details, and log it
+    synchronized (this) {
+      if (failureCause == null) {
+        failureCause = exception;
+        failureState = getServiceState();
+        LOG.info("Service " + getName()
+                 + "failed in state " + failureState
+                 + "; cause: " + exception,
+                 exception);
+      }
+    }
+  }
+
+  @Override
+  public final boolean waitForServiceToStop(long timeout) {
+    synchronized (terminationNotification) {
+      boolean completed = terminationNotification.get();
+      while (!completed) {
+        try {
+          terminationNotification.wait(timeout);
+          //here there has been a timeout, the object has terminated,
+          //or there has been a spurious wakeup (which we ignore)
+          completed = true;
+        } catch (InterruptedException e) {
+          //interrupted; have another look at the flag
+          completed = terminationNotification.get();
+        }
+      }
+      return terminationNotification.get();
+    }
+  }
+  
+  /* ===================================================================== */
+  /* Override Points */
+  /* ======================================================================= */
+
+  /**
+   * All initialization code needed by a service.
+   *
+   * This method will only ever be called once during the lifecycle of
+   * a specific service instance.
+   *
+   * Implementations do not need to be synchronized as the logic
+   * in {@link #init(Configuration)} prevents re-entrancy.
+   *
+   * @param conf configuration
+   * @throws Exception on a failure -these will be caught,
+   * possibly wrapped, and wil; trigger a service stop
+   */
+  protected void innerInit(Configuration conf) throws Exception {
+
+  }
+
+  /**
+   * Actions called during the {@link STATE#INITED} to 
+   * {@link STATE#STARTED} transition.
+   *
+   * This method will only ever be called once during the lifecycle of
+   * a specific service instance.
+   *
+   * Implementations do not need to be synchronized as the logic
+   * in {@link #start()} prevents re-entrancy.
+   *
+   * @throws Exception if needed -these will be caught,
+   * wrapped, and trigger a service stop
+   */
+  protected void innerStart() throws Exception {
+
+  }
+
+  /**
+   * Actions called to any transition to the {@link STATE#STOPPED} state.
+   * 
+   * This method will only ever be called once during the lifecycle of
+   * a specific service instance.
+   * 
+   * Implementations do not need to be synchronized as the logic
+   * in {@link #stop()} prevents re-entrancy.
+   * 
+   * Implementations MUST write this to be robust against failures, including 
+   * checks for null references -and for the first failure to not stop other
+   * attempts to shut down parts of the service.
+   * 
+   * @throws Exception if needed -these will be caught and logged.
+   */
+  protected void innerStop() throws Exception {
+
   }
 
   @Override
@@ -139,28 +315,63 @@ public abstract class AbstractService implements Service {
   }
 
   /**
-   * Verify that that a service is in a given state.
-   * @param currentState the desired state
-   * @throws IllegalStateException if the service state is different from
-   * the desired state
+   * Notify local and global listeners of state changes
    */
-  private void ensureCurrentState(STATE currentState) {
-    ServiceOperations.ensureCurrentState(state, currentState);
+  private void notifyListeners() {
+    try {
+      listeners.notifyListeners(this);
+      globalListeners.notifyListeners(this);
+    } catch (Throwable e) {
+      LOG.warn("Exception while notifying listeners of " + this + ": " + e,
+               e);
+    }
   }
 
   /**
-   * Change to a new state and notify all listeners.
-   * This is a private method that is only invoked from synchronized methods,
-   * which avoid having to clone the listener list. It does imply that
-   * the state change listener methods should be short lived, as they
-   * will delay the state transition.
-   * @param newState new service state
+   * Add a state change event to the lifecycle history
    */
-  private void changeState(STATE newState) {
-    state = newState;
-    //notify listeners
-    for (ServiceStateChangeListener l : listeners) {
-      l.stateChanged(this);
-    }
+  private void recordLifecycleEvent() {
+    LifecycleEvent event = new LifecycleEvent();
+    event.time = System.currentTimeMillis();
+    event.state = getServiceState();
+    lifecycleHistory.add(event);
   }
+
+  @Override
+  public synchronized List<LifecycleEvent> getLifecycleHistory() {
+    return new ArrayList<LifecycleEvent>(lifecycleHistory);
+  }
+
+  /**
+   * Enter a state; record this via {@link #recordLifecycleEvent}
+   * and log at the info level.
+   * @param newState the proposed new state
+   * @return the original state
+   * it wasn't already in that state, and the state model permits state re-entrancy. 
+   */
+  private STATE enterState(STATE newState) {
+    STATE original = stateModel.enterState(newState);
+    if (original != newState) {
+      LOG.info("Service:" + getName() + " entered state " + getServiceState());
+      recordLifecycleEvent();
+    }
+    return original;
+  }
+
+  /**
+   * Query to see if the service is in a specific state. 
+   * In a multi-threaded system, the state may not hold for very long.
+   * @param expected the expected state
+   * @return true if, at the time of invocation, the service was in that state.
+   */
+  @Override
+  public final boolean inState(Service.STATE expected) {
+    return stateModel.inState(expected);
+  }
+
+  @Override
+  public String toString() {
+    return "Service " + name + " in state " + stateModel;
+  }
+
 }
