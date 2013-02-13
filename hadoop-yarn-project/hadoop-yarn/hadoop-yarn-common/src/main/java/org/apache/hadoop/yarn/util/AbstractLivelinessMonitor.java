@@ -49,21 +49,19 @@ public abstract class AbstractLivelinessMonitor<O> extends AbstractService {
   }
 
   @Override
-  public void start() {
+  protected void innerStart() {
     assert !stopped : "starting when already stopped";
     checkerThread = new Thread(new PingChecker());
     checkerThread.setName("Ping Checker");
     checkerThread.start();
-    super.start();
   }
 
   @Override
-  public void stop() {
+  protected void innerStop() {
     stopped = true;
     if (checkerThread != null) {
       checkerThread.interrupt();
     }
-    super.stop();
   }
 
   protected abstract void expire(O ob);

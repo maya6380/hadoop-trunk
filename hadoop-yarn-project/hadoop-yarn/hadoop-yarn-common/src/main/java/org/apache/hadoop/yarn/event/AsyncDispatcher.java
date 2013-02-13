@@ -82,24 +82,22 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
   }
 
   @Override
-  public synchronized void init(Configuration conf) {
+  protected void innerInit(Configuration conf) {
     this.exitOnDispatchException =
         conf.getBoolean(Dispatcher.DISPATCHER_EXIT_ON_ERROR_KEY,
           Dispatcher.DEFAULT_DISPATCHER_EXIT_ON_ERROR);
-    super.init(conf);
   }
 
   @Override
-  public void start() {
+  protected void innerStart() {
     //start all the components
-    super.start();
     eventHandlingThread = new Thread(createThread());
     eventHandlingThread.setName("AsyncDispatcher event handler");
     eventHandlingThread.start();
   }
 
   @Override
-  public void stop() {
+  protected void innerStop() {
     stopped = true;
     if (eventHandlingThread != null) {
       eventHandlingThread.interrupt();
@@ -109,9 +107,6 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
         LOG.warn("Interrupted Exception while stopping", ie);
       }
     }
-
-    // stop all the components
-    super.stop();
   }
 
   @SuppressWarnings("unchecked")
