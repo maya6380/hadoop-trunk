@@ -62,10 +62,10 @@ public class TestServiceLifecycle extends ServiceAssert {
     try {
       svc.init(new Configuration());
       fail("Expected a failure, got " + svc);
-    } catch (IllegalStateException e) {
+    } catch (ServiceStateException e) {
       //expected
     }
-    assertStateCount(svc, Service.STATE.INITED, 2);
+    assertStateCount(svc, Service.STATE.INITED, 1);
     assertServiceConfigurationContains(svc, "test.init");
   }
 
@@ -81,18 +81,16 @@ public class TestServiceLifecycle extends ServiceAssert {
     try {
       svc.start();
       fail("Expected a failure, got " + svc);
-    } catch (IllegalStateException e) {
+    } catch (ServiceStateException e) {
       //expected
     }
-    assertStateCount(svc, Service.STATE.STARTED, 2);
+    assertStateCount(svc, Service.STATE.STARTED, 1);
   }
 
 
   /**
    * Verify that when a service is stopped more than once, no exception
-   * is thrown, and the counter is incremented.
-   * This is because the state change operations happen after the counter in
-   * the subclass is incremented, even though stop is meant to be a no-op
+   * is thrown.
    * @throws Throwable if necessary
    */
   @Test
@@ -103,7 +101,7 @@ public class TestServiceLifecycle extends ServiceAssert {
     svc.stop();
     assertStateCount(svc, Service.STATE.STOPPED, 1);
     svc.stop();
-    assertStateCount(svc, Service.STATE.STOPPED, 2);
+    assertStateCount(svc, Service.STATE.STOPPED, 1);
   }
 
 
@@ -124,12 +122,12 @@ public class TestServiceLifecycle extends ServiceAssert {
       //expected
     }
     //the service state wasn't passed
-    assertServiceStateCreated(svc);
+    assertServiceStateStopped(svc);
     assertStateCount(svc, Service.STATE.INITED, 1);
+    assertStateCount(svc, Service.STATE.STOPPED, 1);
     //now try to stop
     svc.stop();
-    //even after the stop operation, we haven't entered the state
-    assertServiceStateCreated(svc);
+    assertStateCount(svc, Service.STATE.STOPPED, 1);
   }
 
 
@@ -151,18 +149,12 @@ public class TestServiceLifecycle extends ServiceAssert {
       //expected
     }
     //the service state wasn't passed
-    assertServiceStateInited(svc);
-    assertStateCount(svc, Service.STATE.INITED, 1);
-    //now try to stop
-    svc.stop();
-    //even after the stop operation, we haven't entered the state
-    assertServiceStateInited(svc);
+    assertServiceStateStopped(svc);
   }
 
   /**
    * verify that when a service fails during its stop operation,
-   * its state does not change, and the subclass invocation counter
-   * increments.
+   * its state does not change.
    * @throws Throwable if necessary
    */
   @Test
@@ -170,49 +162,59 @@ public class TestServiceLifecycle extends ServiceAssert {
     BreakableService svc = new BreakableService(false, false, true);
     svc.init(new Configuration());
     svc.start();
-    try {
-      svc.stop();
-      fail("Expected a failure, got " + svc);
-    } catch (BreakableService.BrokenLifecycleEvent e) {
-      //expected
-    }
+    svc.stop();
     assertStateCount(svc, Service.STATE.STOPPED, 1);
-    assertServiceStateStarted(svc);
-    //now try again, and expect it to happen again
-    try {
-      svc.stop();
-      fail("Expected a failure, got " + svc);
-    } catch (BreakableService.BrokenLifecycleEvent e) {
-      //expected
-    }
-    assertStateCount(svc, Service.STATE.STOPPED, 2);
   }
 
   /**
-   * verify that when a service that is not started is stopped, its counter
-   * of stop calls is still incremented-and the service remains in its
-   * original state..
+   * verify that when a service that is not started is stopped, the
+   * service enters the stopped state
    * @throws Throwable on a failure
    */
   @Test
   public void testStopUnstarted() throws Throwable {
     BreakableService svc = new BreakableService();
     svc.stop();
-    assertServiceStateCreated(svc);
-    assertStateCount(svc, Service.STATE.STOPPED, 1);
-
-    //stop failed, now it can be initialised
-    svc.init(new Configuration());
-
-    //and try to stop again, with no state change but an increment
-    svc.stop();
-    assertServiceStateInited(svc);
-    assertStateCount(svc, Service.STATE.STOPPED, 2);
-
-    //once started, the service can be stopped reliably
-    svc.start();
-    ServiceOperations.stop(svc);
     assertServiceStateStopped(svc);
-    assertStateCount(svc, Service.STATE.STOPPED, 3);
+    assertStateCount(svc, Service.STATE.INITED, 0);
+    assertStateCount(svc, Service.STATE.STOPPED, 1);
+  }
+
+  /**
+   * Show that if the service failed during an init
+   * operation, stop was called. 
+   */
+
+  @Test
+  public void testStopFailingInitAndStop() throws Throwable {
+    BreakableService svc = new BreakableService(true, false, true);
+    svc.register(new ServiceStateLogListener());
+    try {
+      svc.init(new Configuration());
+      fail("Expected a failure, got " + svc);
+    } catch (BreakableService.BrokenLifecycleEvent e) {
+      assertEquals(Service.STATE.INITED, e.state);
+    }
+    //the service state is stopped
+    assertServiceStateStopped(svc);
+    assertEquals(Service.STATE.INITED, svc.getFailureState());
+
+    Throwable failureCause = svc.getFailureCause();
+    assertNotNull("Null failure cause in " + svc, failureCause);
+    BreakableService.BrokenLifecycleEvent cause =
+      (BreakableService.BrokenLifecycleEvent) failureCause;
+    assertNotNull("null state in "+ cause + " raised by "+ svc ,cause.state);
+    assertEquals(Service.STATE.INITED, cause.state);
+  }
+
+  @Test
+  public void testInitNullConf() throws Throwable {
+    BreakableService svc = new BreakableService(true, false, true);
+    try {
+      svc.init(null);
+      fail("Expected a failure, got " + svc);
+    } catch (ServiceStateException e) {
+      //expected
+    }
   }
 }
