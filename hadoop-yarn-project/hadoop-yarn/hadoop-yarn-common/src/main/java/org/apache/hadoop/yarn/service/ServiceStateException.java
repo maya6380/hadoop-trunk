@@ -18,12 +18,14 @@
 
 package org.apache.hadoop.yarn.service;
 
-import org.apache.hadoop.yarn.YarnException;
+import org.apache.hadoop.yarn.exceptions.YarnException;
+
+import java.io.IOException;
 
 /**
  * Subclass of {@link YarnException} that is raised on state change operations.
  */
-public class ServiceStateException extends YarnException {
+public class ServiceStateException extends RuntimeException {
 
   public ServiceStateException(String message) {
     super(message);

@@ -23,8 +23,11 @@ import static org.junit.Assert.fail;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.YarnRuntimeException;
+import org.apache.hadoop.yarn.service.BreakableService;
 import org.apache.hadoop.yarn.service.CompositeService;
+import org.apache.hadoop.yarn.service.Service;
 import org.apache.hadoop.yarn.service.Service.STATE;
+import org.apache.hadoop.yarn.service.ServiceStateException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -59,6 +62,9 @@ public class TestCompositeService {
     // Initialise the composite service
     serviceManager.init(conf);
 
+    //verify they were all inited
+    assertInState(services, STATE.INITED);
+
     // Verify the init() call sequence numbers for every service
     for (int i = 0; i < NUM_OF_SERVICES; i++) {
       assertEquals("For " + services[i]
@@ -67,11 +73,11 @@ public class TestCompositeService {
     }
 
     // Reset the call sequence numbers
-    for (int i = 0; i < NUM_OF_SERVICES; i++) {
-      services[i].reset();
-    }
+    resetServices(services);
 
     serviceManager.start();
+    //verify they were all started
+    assertInState(services, STATE.STARTED);
 
     // Verify the start() call sequence numbers for every service
     for (int i = 0; i < NUM_OF_SERVICES; i++) {
@@ -79,13 +85,12 @@ public class TestCompositeService {
           + " service, start() call sequence number should have been ", i,
           services[i].getCallSequenceNumber());
     }
+    resetServices(services);
 
-    // Reset the call sequence numbers
-    for (int i = 0; i < NUM_OF_SERVICES; i++) {
-      services[i].reset();
-    }
 
     serviceManager.stop();
+    //verify they were all stopped
+    assertInState(services, STATE.STOPPED);
 
     // Verify the stop() call sequence numbers for every service
     for (int i = 0; i < NUM_OF_SERVICES; i++) {
@@ -101,6 +106,13 @@ public class TestCompositeService {
       assertEquals("For " + services[i]
           + " service, stop() call sequence number should have been ",
           ((NUM_OF_SERVICES - 1) - i), services[i].getCallSequenceNumber());
+    }
+  }
+
+  private void resetServices(CompositeServiceImpl[] services) {
+    // Reset the call sequence numbers
+    for (int i = 0; i < NUM_OF_SERVICES; i++) {
+      services[i].reset();
     }
   }
 
@@ -171,14 +183,102 @@ public class TestCompositeService {
     try {
       serviceManager.stop();
     } catch (YarnRuntimeException e) {
-      for (int i = 0; i < NUM_OF_SERVICES - 1; i++) {
-        assertEquals("Service state should have been ", STATE.STOPPED,
-            services[NUM_OF_SERVICES].getServiceState());
-      }
+      assertInState(services, STATE.STOPPED);
     }
   }
 
-  public static class CompositeServiceImpl extends CompositeService {
+  /**
+   * Assert that all services are in the same expected state
+   * @param services services to examine
+   * @param expected expected state value
+   */
+  private void assertInState(CompositeServiceImpl[] services,
+                             STATE expected) {
+    for (Service service: services) {
+      assertEquals("Service state should have been " + expected + " in "
+                   + service,
+                   expected,
+                   service.getServiceState());
+    }
+  }
+
+  /**
+   * Shut down from not-inited, assert that none were 
+   */
+  @Test
+  public void testServiceStopFromNotInited() {
+    ServiceManager serviceManager = new ServiceManager("ServiceManager");
+
+    // Add services
+    for (int i = 0; i < NUM_OF_SERVICES; i++) {
+      CompositeServiceImpl service = new CompositeServiceImpl(i);
+      serviceManager.addTestService(service);
+    }
+
+    CompositeServiceImpl[] services = serviceManager.getServices().toArray(
+      new CompositeServiceImpl[0]);
+    serviceManager.stop();
+    assertInState(services, STATE.STOPPED);
+    // Verify the stop() call sequence numbers for every service
+    for (int i = 0; i < NUM_OF_SERVICES; i++) {
+      assertEquals("For " + services[i]
+                   + " service, stop() call sequence number should have been ",
+                   ((NUM_OF_SERVICES - 1) - i),
+                   services[i].getCallSequenceNumber());
+    }
+  }
+
+  /**
+   * Shut down from not-inited, assert that none were 
+   */
+  @Test
+  public void testServiceStopFromInited() {
+    ServiceManager serviceManager = new ServiceManager("ServiceManager");
+
+    // Add services
+    for (int i = 0; i < NUM_OF_SERVICES; i++) {
+      CompositeServiceImpl service = new CompositeServiceImpl(i);
+      serviceManager.addTestService(service);
+    }
+
+    CompositeServiceImpl[] services = serviceManager.getServices().toArray(
+      new CompositeServiceImpl[0]);
+    serviceManager.init(new Configuration());
+    serviceManager.stop();
+    assertInState(services, STATE.STOPPED);
+    assertEquals(NUM_OF_SERVICES, CompositeServiceImpl.getCounter());
+  }
+
+  /**
+   * Use a null configuration & expect a failure
+   * @throws Throwable
+   */
+  @Test
+  public void testInitNullConf() throws Throwable {
+    ServiceManager serviceManager = new ServiceManager("testInitNullConf");
+
+    CompositeServiceImpl service = new CompositeServiceImpl(0);
+    serviceManager.addTestService(service);
+    try {
+      serviceManager.init(null);
+      fail("Expected a failure, got " + serviceManager);
+    } catch (ServiceStateException e) {
+      //expected
+    }
+  }
+  
+  /**
+   * Shut down from not-inited, assert that none were 
+   */
+  @Test
+  public void testServiceLifecycleNoChildrenl() {
+    ServiceManager serviceManager = new ServiceManager("ServiceManager");
+    serviceManager.init(new Configuration());
+    serviceManager.start();
+    serviceManager.stop();
+  }
+
+    public static class CompositeServiceImpl extends CompositeService {
 
     private static int counter = -1;
 
@@ -193,30 +293,30 @@ public class TestCompositeService {
     }
 
     @Override
-    public synchronized void init(Configuration conf) {
+    protected void innerInit(Configuration conf) {
       counter++;
       callSequenceNumber = counter;
-      super.init(conf);
+      super.innerInit(conf);
     }
 
     @Override
-    public synchronized void start() {
+    protected void innerStart() {
       if (throwExceptionOnStart) {
         throw new YarnRuntimeException("Fake service start exception");
       }
       counter++;
       callSequenceNumber = counter;
-      super.start();
+      super.innerStart();
     }
 
     @Override
-    public synchronized void stop() {
+    protected void innerStop() {
       counter++;
       callSequenceNumber = counter;
       if (throwExceptionOnStop) {
         throw new YarnRuntimeException("Fake service stop exception");
       }
-      super.stop();
+      super.innerStop();
     }
 
     public static int getCounter() {
@@ -242,11 +342,6 @@ public class TestCompositeService {
 
     public void setThrowExceptionOnStop(boolean throwExceptionOnStop) {
       this.throwExceptionOnStop = throwExceptionOnStop;
-    }
-
-    @Override
-    public String toString() {
-      return "Service " + getName();
     }
 
   }

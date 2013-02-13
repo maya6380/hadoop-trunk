@@ -26,7 +26,6 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.yarn.YarnRuntimeException;
 
 /**
  * Composition of services.
@@ -36,6 +35,7 @@ public class CompositeService extends AbstractService {
   private static final Log LOG = LogFactory.getLog(CompositeService.class);
 
   private List<Service> serviceList = new ArrayList<Service>();
+  private int serviceStartedCount = 0;
 
   public CompositeService(String name) {
     super(name);
@@ -53,53 +53,33 @@ public class CompositeService extends AbstractService {
     return serviceList.remove(service);
   }
 
-  public synchronized void init(Configuration conf) {
+  protected void innerInit(Configuration conf) {
     for (Service service : serviceList) {
       service.init(conf);
     }
-    super.init(conf);
   }
 
-  public synchronized void start() {
-    int i = 0;
-    try {
-      for (int n = serviceList.size(); i < n; i++) {
-        Service service = serviceList.get(i);
-        service.start();
-      }
-      super.start();
-    } catch (Throwable e) {
-      LOG.error("Error starting services " + getName(), e);
-      // Note that the state of the failed service is still INITED and not
-      // STARTED. Even though the last service is not started completely, still
-      // call stop() on all services including failed service to make sure cleanup
-      // happens.
-      stop(i);
-      throw new YarnRuntimeException("Failed to Start " + getName(), e);
-    }
 
+  protected void innerStart() {
+    for (Service service : serviceList) {
+      // start the service. If this fails that service
+      // will be stopped and an exception raised
+      service.start();
+      //after starting the service, increment the service count.
+      ++serviceStartedCount;
+    }
   }
 
-  public synchronized void stop() {
-    if (this.getServiceState() == STATE.STOPPED) {
-      // The base composite-service is already stopped, don't do anything again.
-      return;
-    }
-    if (serviceList.size() > 0) {
-      stop(serviceList.size() - 1);
-    }
-    super.stop();
+  protected void innerStop() {
+    //stop all started services
+    stop(serviceStartedCount);
   }
 
   private synchronized void stop(int numOfServicesStarted) {
     // stop in reserve order of start
-    for (int i = numOfServicesStarted; i >= 0; i--) {
+    for (int i = numOfServicesStarted-1; i >= 0; i--) {
       Service service = serviceList.get(i);
-      try {
-        service.stop();
-      } catch (Throwable t) {
-        LOG.info("Error stopping " + service.getName(), t);
-      }
+      ServiceOperations.stopQuietly(service);
     }
   }
 
@@ -117,13 +97,8 @@ public class CompositeService extends AbstractService {
 
     @Override
     public void run() {
-      try {
-        // Stop the Composite Service
-        compositeService.stop();
-      } catch (Throwable t) {
-        LOG.info("Error stopping " + compositeService.getName(), t);
-      }
+      ServiceOperations.stopQuietly(compositeService);
     }
   }
-  
+
 }
