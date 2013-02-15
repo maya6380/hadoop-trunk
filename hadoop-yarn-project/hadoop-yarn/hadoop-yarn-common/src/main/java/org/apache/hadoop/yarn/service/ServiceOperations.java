@@ -134,10 +134,7 @@ public final class ServiceOperations {
    */
   public static void stop(Service service) {
     if (service != null) {
-      Service.STATE state = service.getServiceState();
-      if (ServiceStateModel.isValidStateTransition(state, Service.STATE.STOPPED)) {
-        service.stop();
-      }
+      service.stop();
     }
   }
 
@@ -150,11 +147,35 @@ public final class ServiceOperations {
    * @return any exception that was caught; null if none was.
    */
   public static Throwable stopQuietly(Service service) {
+    Log log = LOG;
     try {
       stop(service);
     } catch (Throwable e) {
-      LOG.warn("When stopping the service " + service.getName()
-                   + " : " + e,
+      log.warn("When stopping the service " + service.getName()
+               + " : " + e,
+               e);
+      return e;
+    }
+    return null;
+  }
+
+  /**
+   * Stop a service; if it is null do nothing. Exceptions are caught and
+   * logged at warn level. (but not Throwables). This operation is intended to
+   * be used in cleanup operations
+   *
+   * @param log the log to warn at
+   * @param service a service; may be null
+   * @return any exception that was caught; null if none was.
+   * @see ServiceOperations#stopQuietly(Service)
+   * 
+   */
+  protected static Throwable stopQuietly(Log log, Service service) {
+    try {
+      stop(service);
+    } catch (Throwable e) {
+      log.warn("When stopping the service " + service.getName()
+               + " : " + e,
                e);
       return e;
     }

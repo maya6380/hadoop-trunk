@@ -127,7 +127,7 @@ public abstract class AbstractService implements Service {
       notifyListeners();
     } catch (Exception e) {
       noteFailure(e);
-      stop();
+      stopQuietly(this);
       throw ServiceStateException.convert(e);
     }
   }
@@ -148,7 +148,7 @@ public abstract class AbstractService implements Service {
       notifyListeners();
     } catch (Exception e) {
       noteFailure(e);
-      stop();
+      stopQuietly(this);
       throw ServiceStateException.convert(e);
     }
   }
@@ -187,6 +187,17 @@ public abstract class AbstractService implements Service {
   }
 
   /**
+   * Stop a service, logging problems to this
+   * service's log. 
+   * 
+   * @param service service to stop -can be null
+   * @see ServiceOperations#stopQuietly(Log, Service) 
+   */
+  protected void stopQuietly(AbstractService service) {
+    ServiceOperations.stopQuietly(LOG, service);
+  }
+
+  /**
    * Failure handling: record the exception
    * that triggered it -if there was not one already.
    * Services are free to call this themselves.
@@ -194,7 +205,7 @@ public abstract class AbstractService implements Service {
    */
   protected final void noteFailure(Exception exception) {
     if (LOG.isDebugEnabled()) {
-      LOG.debug("noteFailure "+ exception, null);
+      LOG.debug("noteFailure " + exception, null);
     }
     if (exception == null) {
       //make sure failure logic doesn't itself cause problems
