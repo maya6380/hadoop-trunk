@@ -19,7 +19,9 @@
 package org.apache.hadoop.yarn.service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.logging.Log;
@@ -83,6 +85,11 @@ public abstract class AbstractService implements Service {
    */
   private final List<LifecycleEvent> lifecycleHistory
     = new ArrayList<LifecycleEvent>(5);
+
+  /**
+   * Map of blocking dependencies
+   */
+  private final Map<String,String> blockerMap = new HashMap<String, String>();
 
   /**
    * Construct the service.
@@ -385,4 +392,34 @@ public abstract class AbstractService implements Service {
     return "Service " + name + " in state " + stateModel;
   }
 
+  /**
+   * Put a blocker to the blocker map -replacing any
+   * with the same name.
+   * @param name blocker name
+   * @param details any specifics on the block. This must be non-null.
+   */
+  protected void putBlocker(String name, String details) {
+    synchronized (blockerMap) {
+      blockerMap.put(name, details);
+    }
+  }
+
+  /**
+   * Remove a blocker from the blocker map -
+   * this is a no-op if the blocker is not present
+   * @param name the name of the blocker
+   */
+  public void removeBlocker(String name) {
+    synchronized (blockerMap) {
+      blockerMap.remove(name);
+    }
+  }
+  
+  @Override
+  public Map<String, String> getBlockers() {
+    synchronized (blockerMap) {
+      Map<String, String> map = new HashMap<String, String>(blockerMap);
+      return map;
+    }
+  }
 }

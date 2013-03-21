@@ -196,25 +196,9 @@ public interface Service {
   }
 
   /**
-   * A serializable structure to describe a block for a service.
-   * The {@link #name} field should be constant over versions; 
-   * {@link #details} is for people.
-   */
-  public class Block implements Serializable {
-    /**
-     * Local time in milliseconds when the event occurred 
-     */
-    public long time;
-
-    public String name;
-    
-    public String details;
-  }
-
-  /**
-   * Get a list of blocks on a service -remote dependencies
+   * Get the blockers on a service -remote dependencies
    * that are stopping the service from being <i>live</i>.
-   * @return a list of blocks. This list is a snapshot.
+   * @return a (snapshotted) map of blocker name-&gt;description values
    */
-  public Map<Block,String> listBlocks();
+  public Map<String, String> getBlockers();
 }
