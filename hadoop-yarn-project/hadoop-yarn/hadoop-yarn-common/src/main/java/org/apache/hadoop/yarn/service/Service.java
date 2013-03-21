@@ -22,6 +22,7 @@ import org.apache.hadoop.conf.Configuration;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Service LifeCycle.
@@ -194,5 +195,26 @@ public interface Service {
     public Service.STATE state;
   }
 
+  /**
+   * A serializable structure to describe a block for a service.
+   * The {@link #name} field should be constant over versions; 
+   * {@link #details} is for people.
+   */
+  public class Block implements Serializable {
+    /**
+     * Local time in milliseconds when the event occurred 
+     */
+    public long time;
 
+    public String name;
+    
+    public String details;
+  }
+
+  /**
+   * Get a list of blocks on a service -remote dependencies
+   * that are stopping the service from being <i>live</i>.
+   * @return a list of blocks. This list is a snapshot.
+   */
+  public Map<Block,String> listBlocks();
 }
