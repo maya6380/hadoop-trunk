@@ -91,20 +91,18 @@ public class ContainersLauncher extends AbstractService
   }
 
   @Override
-  public void init(Configuration conf) {
+  protected void innerInit(Configuration conf) {
     try {
       //TODO Is this required?
       FileContext.getLocalFSFileContext(conf);
     } catch (UnsupportedFileSystemException e) {
       throw new YarnRuntimeException("Failed to start ContainersLauncher", e);
     }
-    super.init(conf);
   }
 
   @Override
-  public void stop() {
+  protected  void innerStop() {
     containerLauncher.shutdownNow();
-    super.stop();
   }
 
   @Override

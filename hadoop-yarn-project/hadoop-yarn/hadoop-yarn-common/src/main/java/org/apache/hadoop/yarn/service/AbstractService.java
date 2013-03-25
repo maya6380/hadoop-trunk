@@ -168,7 +168,7 @@ public abstract class AbstractService implements Service {
   public final void stop() {
     //this operation is only invoked if the service is not already stopped;
     // it is not an error
-    //to go STOPPED->STOPPED; you just don't want side effects.
+    //to go STOPPED->STOPPED -it is just a no-op
     if (enterState(STATE.STOPPED) != STATE.STOPPED) {
       try {
         innerStop();
@@ -200,8 +200,18 @@ public abstract class AbstractService implements Service {
    * @param service service to stop -can be null
    * @see ServiceOperations#stopQuietly(Log, Service) 
    */
-  protected void stopQuietly(AbstractService service) {
+  protected void stopQuietly(Service service) {
     ServiceOperations.stopQuietly(LOG, service);
+  }
+
+  /**
+   * Stop a service
+   * 
+   * @param service service to stop -can be null
+   * @see ServiceOperations#stop(Service) 
+   */
+  protected void stopService(Service service) {
+    ServiceOperations.stop(service);
   }
 
   /**

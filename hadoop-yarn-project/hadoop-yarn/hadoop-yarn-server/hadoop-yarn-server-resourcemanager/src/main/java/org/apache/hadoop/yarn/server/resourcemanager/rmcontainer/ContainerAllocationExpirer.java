@@ -38,8 +38,7 @@ public class ContainerAllocationExpirer extends
     this.dispatcher = d.getEventHandler();
   }
 
-  public void init(Configuration conf) {
-    super.init(conf);
+  public void innerInit(Configuration conf) {
     int expireIntvl = conf.getInt(
             YarnConfiguration.RM_CONTAINER_ALLOC_EXPIRY_INTERVAL_MS,
             YarnConfiguration.DEFAULT_RM_CONTAINER_ALLOC_EXPIRY_INTERVAL_MS);

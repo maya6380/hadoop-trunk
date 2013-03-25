@@ -42,6 +42,7 @@ import org.apache.hadoop.yarn.server.nodemanager.ContainerExecutor;
 import org.apache.hadoop.yarn.server.nodemanager.DefaultContainerExecutor;
 import org.apache.hadoop.yarn.service.AbstractService;
 import org.apache.hadoop.yarn.service.Service;
+import org.apache.hadoop.yarn.service.ServiceOperations;
 
 /**
  * Configures and starts the MR-specific components in the YARN cluster.
@@ -67,7 +68,7 @@ public class MiniMRYarnCluster extends MiniYARNCluster {
   }
 
   @Override
-  public void init(Configuration conf) {
+  public void innerInit(Configuration conf) {
     conf.set(MRConfig.FRAMEWORK_NAME, MRConfig.YARN_FRAMEWORK_NAME);
     if (conf.get(MRJobConfig.MR_AM_STAGING_DIR) == null) {
       conf.set(MRJobConfig.MR_AM_STAGING_DIR, new File(getTestWorkDir(),
@@ -121,7 +122,7 @@ public class MiniMRYarnCluster extends MiniYARNCluster {
     // for corresponding uberized tests.
     conf.setBoolean(MRJobConfig.JOB_UBERTASK_ENABLE, false);
 
-    super.init(conf);
+    super.innerInit(conf);
   }
 
   private class JobHistoryServerWrapper extends AbstractService {
@@ -130,7 +131,7 @@ public class MiniMRYarnCluster extends MiniYARNCluster {
     }
 
     @Override
-    public synchronized void start() {
+    public synchronized void innerStart() throws Exception {
       try {
         if (!getConfig().getBoolean(
             JHAdminConfig.MR_HISTORY_MINICLUSTER_FIXED_PORTS,
@@ -156,7 +157,9 @@ public class MiniMRYarnCluster extends MiniYARNCluster {
         if (historyServer.getServiceState() != STATE.STARTED) {
           throw new IOException("HistoryServer failed to start");
         }
-        super.start();
+        super.innerStart();
+      } catch (Exception t) {
+        throw t;
       } catch (Throwable t) {
         throw new YarnRuntimeException(t);
       }
@@ -177,11 +180,9 @@ public class MiniMRYarnCluster extends MiniYARNCluster {
     }
 
     @Override
-    public synchronized void stop() {
-      if (historyServer != null) {
-        historyServer.stop();
-      }
-      super.stop();
+    public synchronized void innerStop() throws Exception {
+      ServiceOperations.stop(historyServer);
+      super.innerStop();
     }
   }
 

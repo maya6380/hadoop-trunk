@@ -53,12 +53,7 @@ public class WebServer extends AbstractService {
   }
 
   @Override
-  public synchronized void init(Configuration conf) {
-    super.init(conf);
-  }
-
-  @Override
-  public synchronized void start() {
+  protected void innerStart() throws Exception {
     String bindAddress = getConfig().get(YarnConfiguration.NM_WEBAPP_ADDRESS,
         YarnConfiguration.DEFAULT_NM_WEBAPP_ADDRESS);
     LOG.info("Instantiating NMWebApp at " + bindAddress);
@@ -70,9 +65,8 @@ public class WebServer extends AbstractService {
     } catch (Exception e) {
       String msg = "NMWebapps failed to start.";
       LOG.error(msg, e);
-      throw new YarnRuntimeException(msg);
+      throw new YarnRuntimeException(msg, e);
     }
-    super.start();
   }
 
   public int getPort() {
@@ -80,11 +74,10 @@ public class WebServer extends AbstractService {
   }
 
   @Override
-  public synchronized void stop() {
+  protected void innerStop() {
     if (this.webApp != null) {
       this.webApp.stop();
     }
-    super.stop();
   }
 
   public static class NMWebApp extends WebApp implements YarnWebParams {

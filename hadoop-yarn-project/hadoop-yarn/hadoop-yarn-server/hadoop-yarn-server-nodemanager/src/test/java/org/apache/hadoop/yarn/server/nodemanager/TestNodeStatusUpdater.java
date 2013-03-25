@@ -865,7 +865,7 @@ public class TestNodeStatusUpdater {
         return new ContainerManagerImpl(context, exec, del, nodeStatusUpdater,
           metrics, aclsManager, diskhandler) {
           @Override
-          public void start() {
+          protected void innerStart() {
             // Simulating failure of starting RPC server
             throw new YarnRuntimeException("Starting of RPC Server failed");
           }

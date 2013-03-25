@@ -82,7 +82,7 @@ public class AuxServices extends AbstractService
   }
 
   @Override
-  public void init(Configuration conf) {
+  public void innerInit(Configuration conf) throws Exception {
     Collection<String> auxNames = conf.getStringCollection(
         YarnConfiguration.NM_AUX_SERVICES);
     for (final String sName : auxNames) {
@@ -110,11 +110,11 @@ public class AuxServices extends AbstractService
         throw e;
       }
     }
-    super.init(conf);
+    super.innerInit(conf);
   }
 
   @Override
-  public void start() {
+  public void innerStart() throws Exception {
     // TODO fork(?) services running as configured user
     //      monitor for health, shutdown/restart(?) if any should die
     for (Map.Entry<String, AuxiliaryService> entry : serviceMap.entrySet()) {
@@ -127,11 +127,11 @@ public class AuxServices extends AbstractService
         serviceMeta.put(name, meta);
       }
     }
-    super.start();
+    super.innerStart();
   }
 
   @Override
-  public void stop() {
+  public void innerStop() throws Exception {
     try {
       synchronized (serviceMap) {
         for (Service service : serviceMap.values()) {
@@ -144,7 +144,7 @@ public class AuxServices extends AbstractService
         serviceMeta.clear();
       }
     } finally {
-      super.stop();
+      super.innerStop();
     }
   }
 

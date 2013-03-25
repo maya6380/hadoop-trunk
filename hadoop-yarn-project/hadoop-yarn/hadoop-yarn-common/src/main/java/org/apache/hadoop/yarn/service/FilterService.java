@@ -21,6 +21,7 @@ package org.apache.hadoop.yarn.service;
 import org.apache.hadoop.conf.Configuration;
 
 import java.util.List;
+import java.util.Map;
 
 public class FilterService implements Service {
 
@@ -99,5 +100,10 @@ public class FilterService implements Service {
   @Override
   public List<LifecycleEvent> getLifecycleHistory() {
     return service.getLifecycleHistory();
+  }
+
+  @Override
+  public Map<String, String> getBlockers() {
+    return service.getBlockers();
   }
 }
