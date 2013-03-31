@@ -68,7 +68,7 @@ public class MiniMRYarnCluster extends MiniYARNCluster {
   }
 
   @Override
-  public void innerInit(Configuration conf) {
+  public void innerInit(Configuration conf) throws Exception {
     conf.set(MRConfig.FRAMEWORK_NAME, MRConfig.YARN_FRAMEWORK_NAME);
     if (conf.get(MRJobConfig.MR_AM_STAGING_DIR) == null) {
       conf.set(MRJobConfig.MR_AM_STAGING_DIR, new File(getTestWorkDir(),

@@ -110,7 +110,7 @@ public class TestYarnClientProtocolProvider extends TestCase {
       ResourceMgrDelegate rmgrDelegate = new ResourceMgrDelegate(
           new YarnConfiguration(conf)) {
         @Override
-        public synchronized void start() {
+        protected void innerStart() {
           this.rmClient = cRMProtocol;
         }
       };

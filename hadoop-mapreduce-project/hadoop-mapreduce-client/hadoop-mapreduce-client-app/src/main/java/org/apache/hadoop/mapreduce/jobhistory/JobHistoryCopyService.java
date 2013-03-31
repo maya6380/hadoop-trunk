@@ -58,8 +58,8 @@ public class JobHistoryCopyService extends CompositeService implements HistoryEv
   }
 
   @Override
-  public void init(Configuration conf) {
-    super.init(conf);
+  protected void innerInit(Configuration conf) throws Exception {
+    super.innerInit(conf);
   }
   
   @Override
@@ -71,14 +71,14 @@ public class JobHistoryCopyService extends CompositeService implements HistoryEv
   }
   
   @Override
-  public void start() {
+  protected void innerStart() throws Exception {
     try {
       //TODO should we parse on a background thread???
       parse();
     } catch (IOException e) {
       throw new YarnRuntimeException(e);
     }
-    super.start();
+    super.innerStart();
   }
   
   private void parse() throws IOException {

@@ -177,7 +177,7 @@ public class ContainerManagerImpl extends CompositeService implements
   }
 
   @Override
-  public void innerInit(Configuration conf) {
+  public void innerInit(Configuration conf) throws Exception {
     LogHandler logHandler =
       createLogHandler(conf, this.context, this.deletionService);
     addIfService(logHandler);
@@ -220,7 +220,7 @@ public class ContainerManagerImpl extends CompositeService implements
   }
 
   @Override
-  protected void innerStart() {
+  protected void innerStart() throws Exception {
 
     // Enqueue user dirs in deletion context
 
@@ -263,7 +263,7 @@ public class ContainerManagerImpl extends CompositeService implements
   }
 
   @Override
-  public void innerStop() {
+  public void innerStop() throws Exception {
     if (auxiliaryServices.getServiceState() == STARTED) {
       auxiliaryServices.unregister(this);
     }

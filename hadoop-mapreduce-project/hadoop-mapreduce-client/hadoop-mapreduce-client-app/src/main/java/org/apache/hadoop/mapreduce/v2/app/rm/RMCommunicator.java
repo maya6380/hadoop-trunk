@@ -99,22 +99,22 @@ public abstract class RMCommunicator extends AbstractService
   }
 
   @Override
-  public void init(Configuration conf) {
-    super.init(conf);
+  protected void innerInit(Configuration conf) throws Exception {
+    super.innerInit(conf);
     rmPollInterval =
         conf.getInt(MRJobConfig.MR_AM_TO_RM_HEARTBEAT_INTERVAL_MS,
             MRJobConfig.DEFAULT_MR_AM_TO_RM_HEARTBEAT_INTERVAL_MS);
   }
 
   @Override
-  public void start() {
+  protected void innerStart() throws Exception {
     scheduler= createSchedulerProxy();
     register();
     startAllocatorThread();
     JobID id = TypeConverter.fromYarn(this.applicationId);
     JobId jobId = TypeConverter.toYarn(id);
     job = context.getJob(jobId);
-    super.start();
+    super.innerStart();
   }
 
   protected AppContext getContext() {
@@ -211,7 +211,7 @@ public abstract class RMCommunicator extends AbstractService
   }
 
   @Override
-  public void stop() {
+  protected void innerStop() throws Exception {
     if (stopped.getAndSet(true)) {
       // return if already stopped
       return;
@@ -225,7 +225,7 @@ public abstract class RMCommunicator extends AbstractService
     if(shouldUnregister) {
       unregister();
     }
-    super.stop();
+    super.innerStop();
   }
 
   protected void startAllocatorThread() {

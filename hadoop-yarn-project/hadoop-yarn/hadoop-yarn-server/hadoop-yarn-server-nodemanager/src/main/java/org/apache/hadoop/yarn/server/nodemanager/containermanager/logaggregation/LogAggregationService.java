@@ -114,7 +114,7 @@ public class LogAggregationService extends AbstractService implements
           .build());
   }
 
-  public synchronized void init(Configuration conf) {
+  protected void innerInit(Configuration conf) throws Exception {
     this.remoteRootLogDir =
         new Path(conf.get(YarnConfiguration.NM_REMOTE_APP_LOG_DIR,
             YarnConfiguration.DEFAULT_NM_REMOTE_APP_LOG_DIR));
@@ -122,22 +122,22 @@ public class LogAggregationService extends AbstractService implements
         conf.get(YarnConfiguration.NM_REMOTE_APP_LOG_DIR_SUFFIX,
             YarnConfiguration.DEFAULT_NM_REMOTE_APP_LOG_DIR_SUFFIX);
 
-    super.init(conf);
+    super.innerInit(conf);
   }
 
   @Override
-  public synchronized void start() {
+  protected void innerStart() throws Exception {
     // NodeId is only available during start, the following cannot be moved
     // anywhere else.
     this.nodeId = this.context.getNodeId();
-    super.start();
+    super.innerStart();
   }
   
   @Override
-  public synchronized void stop() {
+  protected void innerStop() throws Exception {
     LOG.info(this.getName() + " waiting for pending aggregation during exit");
     stopAggregators();
-    super.stop();
+    super.innerStop();
   }
    
   private void stopAggregators() {

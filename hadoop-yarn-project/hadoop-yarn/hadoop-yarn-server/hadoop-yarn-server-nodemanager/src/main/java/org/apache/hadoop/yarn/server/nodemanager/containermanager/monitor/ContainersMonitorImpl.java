@@ -85,7 +85,7 @@ public class ContainersMonitorImpl extends AbstractService implements
   }
 
   @Override
-  public synchronized void init(Configuration conf) {
+  protected void innerInit(Configuration conf) throws Exception {
     this.monitoringInterval =
         conf.getLong(YarnConfiguration.NM_CONTAINER_MON_INTERVAL_MS,
             YarnConfiguration.DEFAULT_NM_CONTAINER_MON_INTERVAL_MS);
@@ -151,7 +151,7 @@ public class ContainersMonitorImpl extends AbstractService implements
                 1) + "). Thrashing might happen.");
       }
     }
-    super.init(conf);
+    super.innerInit(conf);
   }
 
   private boolean isEnabled() {
@@ -175,15 +175,15 @@ public class ContainersMonitorImpl extends AbstractService implements
   }
 
   @Override
-  public synchronized void start() {
+  protected void innerStart() throws Exception {
     if (this.isEnabled()) {
       this.monitoringThread.start();
     }
-    super.start();
+    super.innerStart();
   }
 
   @Override
-  public synchronized void stop() {
+  protected void innerStop() throws Exception {
     if (this.isEnabled()) {
       this.monitoringThread.interrupt();
       try {
@@ -192,7 +192,7 @@ public class ContainersMonitorImpl extends AbstractService implements
         ;
       }
     }
-    super.stop();
+    super.innerStop();
   }
 
   private static class ProcessTreeInfo {

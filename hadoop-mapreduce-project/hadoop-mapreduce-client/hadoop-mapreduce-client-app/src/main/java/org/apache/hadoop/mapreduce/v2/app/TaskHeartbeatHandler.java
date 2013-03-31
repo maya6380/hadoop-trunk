@@ -85,26 +85,26 @@ public class TaskHeartbeatHandler extends AbstractService {
   }
 
   @Override
-  public void init(Configuration conf) {
-    super.init(conf);
+  protected void innerInit(Configuration conf) throws Exception {
+    super.innerInit(conf);
     taskTimeOut = conf.getInt(MRJobConfig.TASK_TIMEOUT, 5 * 60 * 1000);
     taskTimeOutCheckInterval =
         conf.getInt(MRJobConfig.TASK_TIMEOUT_CHECK_INTERVAL_MS, 30 * 1000);
   }
 
   @Override
-  public void start() {
+  protected void innerStart() throws Exception {
     lostTaskCheckerThread = new Thread(new PingChecker());
     lostTaskCheckerThread.setName("TaskHeartbeatHandler PingChecker");
     lostTaskCheckerThread.start();
-    super.start();
+    super.innerStart();
   }
 
   @Override
-  public void stop() {
+  protected void innerStop() throws Exception {
     stopped = true;
     lostTaskCheckerThread.interrupt();
-    super.stop();
+    super.innerStop();
   }
 
   public void progressing(TaskAttemptId attemptID) {

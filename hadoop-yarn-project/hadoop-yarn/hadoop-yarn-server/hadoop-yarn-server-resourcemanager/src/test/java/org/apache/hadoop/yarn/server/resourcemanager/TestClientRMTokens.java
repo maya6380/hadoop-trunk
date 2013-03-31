@@ -440,11 +440,11 @@ public class TestClientRMTokens {
     }
 
     @Override
-    public void stop() {
+    protected void innerStop() throws Exception {
       if (rmDTSecretManager != null) {
         rmDTSecretManager.stopThreads();
       }
-      super.stop();
+      super.innerStop();
     }
 
     

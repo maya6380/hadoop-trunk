@@ -293,14 +293,14 @@ public class TestCompositeService {
     }
 
     @Override
-    protected void innerInit(Configuration conf) {
+    protected void innerInit(Configuration conf) throws Exception {
       counter++;
       callSequenceNumber = counter;
       super.innerInit(conf);
     }
 
     @Override
-    protected void innerStart() {
+    protected void innerStart() throws Exception {
       if (throwExceptionOnStart) {
         throw new YarnRuntimeException("Fake service start exception");
       }
@@ -310,7 +310,7 @@ public class TestCompositeService {
     }
 
     @Override
-    protected void innerStop() {
+    protected void innerStop() throws Exception {
       counter++;
       callSequenceNumber = counter;
       if (throwExceptionOnStop) {

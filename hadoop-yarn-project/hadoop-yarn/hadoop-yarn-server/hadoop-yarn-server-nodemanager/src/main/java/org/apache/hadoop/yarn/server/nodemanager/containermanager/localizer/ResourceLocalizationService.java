@@ -248,7 +248,7 @@ public class ResourceLocalizationService extends CompositeService
   }
 
   @Override
-  public void innerStart() {
+  public void innerStart() throws Exception {
     cacheCleanup.scheduleWithFixedDelay(new CacheCleanup(dispatcher),
         cacheCleanupPeriod, cacheCleanupPeriod, TimeUnit.MILLISECONDS);
     server = createServer();

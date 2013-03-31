@@ -239,7 +239,7 @@ public class ContainerLauncherImpl extends AbstractService implements
   }
 
   @Override
-  public synchronized void init(Configuration config) {
+  protected void innerInit(Configuration config) throws Exception {
     Configuration conf = new Configuration(config);
     conf.setInt(
         CommonConfigurationKeysPublic.IPC_CLIENT_CONNECTION_MAXIDLETIME_KEY,
@@ -249,14 +249,14 @@ public class ContainerLauncherImpl extends AbstractService implements
         MRJobConfig.DEFAULT_MR_AM_CONTAINERLAUNCHER_THREAD_COUNT_LIMIT);
     LOG.info("Upper limit on the thread pool size is " + this.limitOnPoolSize);
     this.rpc = createYarnRPC(conf);
-    super.init(conf);
+    super.innerInit(conf);
   }
   
   protected YarnRPC createYarnRPC(Configuration conf) {
     return YarnRPC.create(conf);
   }
 
-  public void start() {
+  protected void innerStart() throws Exception {
 
     ThreadFactory tf = new ThreadFactoryBuilder().setNameFormat(
         "ContainerLauncher #%d").setDaemon(true).build();
@@ -317,7 +317,7 @@ public class ContainerLauncherImpl extends AbstractService implements
     };
     eventHandlingThread.setName("ContainerLauncher Event Handler");
     eventHandlingThread.start();
-    super.start();
+    super.innerStart();
   }
 
   private void shutdownAllContainers() {
@@ -328,16 +328,20 @@ public class ContainerLauncherImpl extends AbstractService implements
     }
   }
 
-  public void stop() {
+  protected void innerStop() throws Exception {
     if (stopped.getAndSet(true)) {
       // return if already stopped
       return;
     }
     // shutdown any containers that might be left running
     shutdownAllContainers();
-    eventHandlingThread.interrupt();
-    launcherPool.shutdownNow();
-    super.stop();
+    if (eventHandlingThread != null) {
+      eventHandlingThread.interrupt();
+    }
+    if (launcherPool != null) {
+      launcherPool.shutdownNow();
+    }
+    super.innerStop();
   }
 
   protected EventProcessor createEventProcessor(ContainerLauncherEvent event) {

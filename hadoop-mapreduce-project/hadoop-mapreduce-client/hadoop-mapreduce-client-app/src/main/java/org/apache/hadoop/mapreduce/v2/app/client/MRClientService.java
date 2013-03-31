@@ -112,7 +112,7 @@ public class MRClientService extends AbstractService
     this.protocolHandler = new MRClientProtocolHandler();
   }
 
-  public void start() {
+  protected void innerStart() throws Exception {
     Configuration conf = getConfig();
     YarnRPC rpc = YarnRPC.create(conf);
     InetSocketAddress address = new InetSocketAddress(0);
@@ -150,7 +150,7 @@ public class MRClientService extends AbstractService
     } catch (Exception e) {
       LOG.error("Webapps failed to start. Ignoring for now:", e);
     }
-    super.start();
+    super.innerStart();
   }
 
   void refreshServiceAcls(Configuration configuration, 
@@ -158,12 +158,15 @@ public class MRClientService extends AbstractService
     this.server.refreshServiceAcl(configuration, policyProvider);
   }
 
-  public void stop() {
-    server.stop();
+  @Override
+  protected void innerStop() throws Exception {
+    if (server != null) {
+      server.stop();
+    }
     if (webApp != null) {
       webApp.stop();
     }
-    super.stop();
+    super.innerStop();
   }
 
   @Override

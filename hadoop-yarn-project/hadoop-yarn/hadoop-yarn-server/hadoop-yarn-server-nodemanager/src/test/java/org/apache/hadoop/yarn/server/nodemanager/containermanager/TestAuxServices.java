@@ -67,16 +67,16 @@ public class TestAuxServices {
     }
 
     @Override
-    public void init(Configuration conf) {
+    protected void innerInit(Configuration conf) throws Exception {
       remaining_init = conf.getInt(idef + ".expected.init", 0);
       remaining_stop = conf.getInt(idef + ".expected.stop", 0);
-      super.init(conf);
+      super.innerInit(conf);
     }
     @Override
-    public void stop() {
+    protected void innerStop() throws Exception {
       assertEquals(0, remaining_init);
       assertEquals(0, remaining_stop);
-      super.stop();
+      super.innerStop();
     }
     @Override
     public void initApp(String user, ApplicationId appId, ByteBuffer data) {

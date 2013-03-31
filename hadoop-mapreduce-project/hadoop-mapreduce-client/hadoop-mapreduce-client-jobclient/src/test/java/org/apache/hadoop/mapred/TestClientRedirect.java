@@ -233,7 +233,7 @@ public class TestClientRedirect {
     }
 
     @Override
-    public void init(Configuration conf) {
+    protected void innerInit(Configuration conf) throws Exception {
       clientServiceBindAddress = RMADDRESS;
       /*
       clientServiceBindAddress = conf.get(
@@ -241,11 +241,11 @@ public class TestClientRedirect {
           YarnConfiguration.DEFAULT_APPSMANAGER_BIND_ADDRESS);
           */
       clientBindAddress = NetUtils.createSocketAddr(clientServiceBindAddress);
-      super.init(conf);
+      super.innerInit(conf);
     }
 
     @Override
-    public void start() {
+    protected void innerStart() throws Exception {
       // All the clients to appsManager are supposed to be authenticated via
       // Kerberos if security is enabled, so no secretManager.
       YarnRPC rpc = YarnRPC.create(getConfig());
@@ -253,7 +253,7 @@ public class TestClientRedirect {
       this.server = rpc.getServer(ClientRMProtocol.class, this,
           clientBindAddress, clientServerConf, null, 1);
       this.server.start();
-      super.start();
+      super.innerStart();
     }
 
     @Override
@@ -416,9 +416,12 @@ public class TestClientRedirect {
        amRunning = true;
     }
 
-    public void stop() {
-      server.stop();
-      super.stop();
+    @Override
+    protected void innerStop() throws Exception {
+      if (server != null) {
+        server.stop();
+      }
+      super.innerStop();
       amRunning = false;
     }
 

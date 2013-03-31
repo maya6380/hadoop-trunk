@@ -140,7 +140,7 @@ public class MiniYARNCluster extends CompositeService {
   }
   
   @Override
-  public void innerInit(Configuration conf) {
+  public void innerInit(Configuration conf) throws Exception {
     super.innerInit(conf instanceof YarnConfiguration ? conf
                                                       : new YarnConfiguration(
                                                         conf));

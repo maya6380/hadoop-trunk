@@ -102,7 +102,8 @@ public class AdminService extends AbstractService implements RMAdminProtocol {
         YarnConfiguration.DEFAULT_YARN_ADMIN_ACL));
   }
 
-  public void innerStart() {
+  @Override
+  protected void innerStart() throws Exception {
     Configuration conf = getConfig();
     YarnRPC rpc = YarnRPC.create(conf);
     this.server =
@@ -124,7 +125,7 @@ public class AdminService extends AbstractService implements RMAdminProtocol {
   }
 
   @Override
-  public void innerStop() {
+  protected void innerStop() throws Exception {
     if (this.server != null) {
       this.server.stop();
     }

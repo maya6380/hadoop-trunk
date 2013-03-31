@@ -128,12 +128,12 @@ public class ClientRMService extends AbstractService implements
   }
 
   @Override
-  public void innerInit(Configuration conf) {
+  protected void innerInit(Configuration conf) throws Exception {
     clientBindAddress = getBindAddress(conf);
   }
 
   @Override
-  public void innerStart() {
+  protected void innerStart() throws Exception {
     Configuration conf = getConfig();
     YarnRPC rpc = YarnRPC.create(conf);
     this.server =   
@@ -159,7 +159,7 @@ public class ClientRMService extends AbstractService implements
   }
 
   @Override
-  public void innerStop() {
+  protected void innerStop() throws Exception {
     if (this.server != null) {
         this.server.stop();
     }

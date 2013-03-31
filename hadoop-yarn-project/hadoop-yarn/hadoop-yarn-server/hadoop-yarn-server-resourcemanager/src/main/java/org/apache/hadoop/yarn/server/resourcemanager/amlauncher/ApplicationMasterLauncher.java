@@ -50,7 +50,8 @@ public class ApplicationMasterLauncher extends AbstractService implements
     this.launcherHandlingThread = new LauncherThread();
   }
   
-  public void innerStart() {
+  @Override
+  protected void innerStart() throws Exception {
     launcherHandlingThread.start();
   }
   
@@ -68,7 +69,8 @@ public class ApplicationMasterLauncher extends AbstractService implements
   }
   
 
-  public void innerStop() {
+  @Override
+  protected void innerStop() throws Exception {
     launcherHandlingThread.interrupt();
     try {
       launcherHandlingThread.join();

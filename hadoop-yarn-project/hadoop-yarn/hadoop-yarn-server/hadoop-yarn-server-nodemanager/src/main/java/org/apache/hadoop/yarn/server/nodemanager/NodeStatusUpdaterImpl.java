@@ -110,7 +110,7 @@ public class NodeStatusUpdaterImpl extends AbstractService implements
   }
 
   @Override
-  protected void innerInit(Configuration conf) {
+  protected void innerInit(Configuration conf) throws Exception {
     this.rmAddress = conf.getSocketAddr(
         YarnConfiguration.RM_RESOURCE_TRACKER_ADDRESS,
         YarnConfiguration.DEFAULT_RM_RESOURCE_TRACKER_ADDRESS,
@@ -147,7 +147,7 @@ public class NodeStatusUpdaterImpl extends AbstractService implements
         " physical-memory=" + memoryMb + " virtual-memory=" + virtualMemoryMb +
         " physical-cores=" + cpuCores + " virtual-cores=" + virtualCores);
     
-    super.init(conf);
+    super.innerInit(conf);
   }
 
   @Override
