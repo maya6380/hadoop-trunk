@@ -74,8 +74,11 @@ public class TestUnmanagedAMLauncher {
   @AfterClass
   public static void tearDown() throws IOException {
     if (yarnCluster != null) {
-      yarnCluster.stop();
-      yarnCluster = null;
+      try {
+        yarnCluster.stop();
+      } finally {
+        yarnCluster = null;
+      }
     }
   }
 
