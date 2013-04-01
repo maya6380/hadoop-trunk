@@ -124,11 +124,12 @@ public abstract class AbstractService implements Service {
    * the state change not permitted, or something else went wrong
    */
   @Override
-  public final void init(Configuration conf) {
-    if (conf == null) {
+  public void init(Configuration conf) {
+/*    if (conf == null) {
       throw new ServiceStateException("Cannot initialize service "
                                       + getName() + ": null configuration");
     }
+    */
     enterState(STATE.INITED);
     this.config = conf;
     try {
@@ -147,7 +148,7 @@ public abstract class AbstractService implements Service {
    * this action
    */
   @Override
-  public final void start() {
+  public void start() {
     //enter the started state
     stateModel.enterState(STATE.STARTED);
     try {
@@ -162,12 +163,11 @@ public abstract class AbstractService implements Service {
     }
   }
 
-
   /**
    * {@inheritDoc}
    */
   @Override
-  public final void stop() {
+  public void stop() {
     //this operation is only invoked if the service is not already stopped;
     // it is not an error
     //to go STOPPED->STOPPED -it is just a no-op
