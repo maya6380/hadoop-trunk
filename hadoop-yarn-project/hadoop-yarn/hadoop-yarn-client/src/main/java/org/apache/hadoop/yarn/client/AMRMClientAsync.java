@@ -132,16 +132,16 @@ public class AMRMClientAsync<T extends ContainerRequest> extends AbstractService
   }
     
   @Override
-  public void init(Configuration conf) {
-    super.init(conf);
+  protected void innerInit(Configuration conf) throws Exception {
+    super.innerInit(conf);
     client.init(conf);
   }  
   
   @Override
-  public void start() {
+  protected void innerStart() throws Exception {
     handlerThread.start();
     client.start();
-    super.start();
+    super.innerStart();
   }
   
   /**
@@ -150,7 +150,7 @@ public class AMRMClientAsync<T extends ContainerRequest> extends AbstractService
    * deadlock, and thus should be avoided.
    */
   @Override
-  public void stop() {
+  protected void innerStop() throws Exception {
     if (Thread.currentThread() == handlerThread) {
       throw new YarnRuntimeException("Cannot call stop from callback handler thread!");
     }
@@ -167,7 +167,7 @@ public class AMRMClientAsync<T extends ContainerRequest> extends AbstractService
     } catch (InterruptedException ex) {
       LOG.error("Error joining with hander thread", ex);
     }
-    super.stop();
+    super.innerStop();
   }
   
   public void setHeartbeatInterval(int interval) {
