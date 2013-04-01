@@ -92,7 +92,7 @@ public class MiniYARNCluster extends CompositeService {
           new Path(targetWorkDir.getAbsolutePath()), true);
     } catch (Exception e) {
       LOG.warn("COULD NOT CLEANUP", e);
-      throw new YarnRuntimeException("could not cleanup test dir", e);
+      throw new YarnRuntimeException("could not cleanup test dir: "+ e, e);
     } 
 
     if (Shell.WINDOWS) {
