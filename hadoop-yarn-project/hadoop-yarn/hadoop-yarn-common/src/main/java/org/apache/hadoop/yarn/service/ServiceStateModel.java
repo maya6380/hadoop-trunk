@@ -27,7 +27,6 @@ public class ServiceStateModel {
    * Map of all valid state transitions
    * [current] [proposed1, proposed2, ...]
    * 
-   * The 
    */
   private static final boolean[][] statemap =
     {
@@ -44,19 +43,25 @@ public class ServiceStateModel {
   private volatile Service.STATE state;
 
   /**
+   * The name of the service: used in exceptions
+   */
+  private String name;
+
+  /**
    * Create the service state model in the {@link Service.STATE#NOTINITED}
    * state.
    */
-  public ServiceStateModel() {
-    this(Service.STATE.NOTINITED);
+  public ServiceStateModel(String name) {
+    this(name, Service.STATE.NOTINITED);
   }
 
   /**
    * Create a service state model instance in the chosen state
    * @param state the starting state
    */
-  public ServiceStateModel(Service.STATE state) {
+  public ServiceStateModel(String name, Service.STATE state) {
     this.state = state;
+    this.name = name;
   }
 
   /**
@@ -84,7 +89,7 @@ public class ServiceStateModel {
    */
   public void ensureCurrentState(Service.STATE expectedState) {
     if (state != expectedState) {
-      throw new ServiceStateException("For this operation, the " +
+      throw new ServiceStateException(name+ ": for this operation, the " +
                                       "current service state must be "
                                       + expectedState
                                       + " instead of " + state);
@@ -99,7 +104,7 @@ public class ServiceStateModel {
    * @throws ServiceStateException if the transition is not permitted
    */
   public synchronized Service.STATE enterState(Service.STATE proposed) {
-    checkStateTransition(state, proposed);
+    checkStateTransition(name, state, proposed);
     Service.STATE original = state;
     //atomic write of the new state
     state = proposed;
@@ -109,19 +114,22 @@ public class ServiceStateModel {
   /**
    * Check that a state tansition is valid and 
    * throw an exception if not
+   * @param name name of the service (can be null)
    * @param state current state
    * @param proposed proposed new state
    */
-  public static void checkStateTransition(Service.STATE state, Service.STATE proposed) {
+  public static void checkStateTransition(String name,
+                                          Service.STATE state,
+                                          Service.STATE proposed) {
     if (!isValidStateTransition(state, proposed)) {
-      throw new ServiceStateException("Cannot enter state " 
+      throw new ServiceStateException(name + " cannot enter state " 
                                       + proposed + " from state " + state);
     }
   }
 
   /**
    * Is a state transition valid?
-   * There are no checks for current=proposed
+   * There are no checks for current==proposed
    * as that is considered a non-transition.
    *
    * using an array kills off all branch misprediction costs, at the expense
@@ -143,7 +151,8 @@ public class ServiceStateModel {
    */
   @Override
   public String toString() {
-    return state.toString();
+    return (name.isEmpty() ? "" : ((name) + ": ")) 
+            + state.toString();
   }
-  
+
 }

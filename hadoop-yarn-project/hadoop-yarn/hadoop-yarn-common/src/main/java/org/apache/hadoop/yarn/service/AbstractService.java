@@ -32,13 +32,14 @@ public abstract class AbstractService implements Service {
 
   private static final Log LOG = LogFactory.getLog(AbstractService.class);
 
-  /** service state */
-  private final ServiceStateModel stateModel = new ServiceStateModel();
-
   /**
    * Service name.
    */
   private final String name;
+
+  /** service state */
+  private final ServiceStateModel stateModel;
+
   /**
    * Service start time. Will be zero until the service is started.
    */
@@ -97,6 +98,7 @@ public abstract class AbstractService implements Service {
    */
   public AbstractService(String name) {
     this.name = name;
+    stateModel = new ServiceStateModel(name);
   }
 
   @Override

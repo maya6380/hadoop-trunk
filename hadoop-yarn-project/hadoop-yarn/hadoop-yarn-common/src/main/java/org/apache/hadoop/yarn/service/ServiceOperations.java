@@ -61,7 +61,7 @@ public final class ServiceOperations {
    * @param proposed proposed new state
    */
   public static void checkStateTransition(Service.STATE state, Service.STATE proposed) {
-    ServiceStateModel.checkStateTransition(state, proposed);
+    ServiceStateModel.checkStateTransition("", state, proposed);
   }
 
   /**
@@ -71,7 +71,9 @@ public final class ServiceOperations {
    * @param proposed proposed new state
    */
   public static void checkStateTransition(Service service, Service.STATE proposed) {
-    ServiceStateModel.checkStateTransition(service.getServiceState(), proposed);
+    ServiceStateModel.checkStateTransition(service.getName(),
+                                           service.getServiceState(),
+                                           proposed);
   }
 
   /**
