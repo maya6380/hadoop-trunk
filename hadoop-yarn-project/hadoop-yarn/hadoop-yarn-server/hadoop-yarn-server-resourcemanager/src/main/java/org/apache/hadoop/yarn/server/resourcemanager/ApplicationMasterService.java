@@ -130,6 +130,7 @@ public class ApplicationMasterService extends AbstractService implements
     this.bindAddress =
         conf.updateConnectAddr(YarnConfiguration.RM_SCHEDULER_ADDRESS,
                                server.getListenerAddress());
+    super.innerStart();
   }
 
   @Private
@@ -429,5 +430,6 @@ public class ApplicationMasterService extends AbstractService implements
     if (this.server != null) {
       this.server.stop();
     }
+    super.innerStop();
   }
 }
