@@ -194,7 +194,7 @@ public class ResourceLocalizationService extends CompositeService
   }
 
   @Override
-  public void innerInit (Configuration conf){
+  public void innerInit (Configuration conf) throws Exception {
       this.validateConf(conf);
     this.publicRsrc =
         new LocalResourcesTrackerImpl(null, dispatcher, true, conf);
@@ -288,7 +288,7 @@ public class ResourceLocalizationService extends CompositeService
   }
 
   @Override
-  public void innerStop() {
+  public void innerStop() throws Exception {
     if (server != null) {
       server.stop();
     }
