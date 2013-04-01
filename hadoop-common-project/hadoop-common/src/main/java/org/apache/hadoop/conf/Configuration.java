@@ -2144,16 +2144,16 @@ public class Configuration implements Iterable<Map.Entry<String,String>>,
       return null;
     } catch (IOException e) {
       LOG.fatal("error parsing conf " + name, e);
-      throw new RuntimeException(e);
+      throw new RuntimeException("Error parsing '" + name + "' : " + e, e);
     } catch (DOMException e) {
       LOG.fatal("error parsing conf " + name, e);
-      throw new RuntimeException(e);
+      throw new RuntimeException("Error parsing '" + name + "' : " + e, e);
     } catch (SAXException e) {
       LOG.fatal("error parsing conf " + name, e);
-      throw new RuntimeException(e);
+      throw new RuntimeException("Error parsing '" + name+ "' : " + e, e);
     } catch (ParserConfigurationException e) {
       LOG.fatal("error parsing conf " + name , e);
-      throw new RuntimeException(e);
+      throw new RuntimeException("Error parsing '" + name + "' : " + e, e);
     }
   }
 
