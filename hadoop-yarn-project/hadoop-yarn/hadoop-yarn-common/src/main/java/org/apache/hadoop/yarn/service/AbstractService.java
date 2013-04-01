@@ -178,6 +178,7 @@ public abstract class AbstractService implements Service {
         //stop-time exceptions are logged if they are the first one,
         // but not acted on
         noteFailure(e);
+        throw ServiceStateException.convert(e);
       } finally {
         //report that the service has terminated
         synchronized (terminationNotification) {
@@ -380,6 +381,7 @@ public abstract class AbstractService implements Service {
    * it wasn't already in that state, and the state model permits state re-entrancy. 
    */
   private STATE enterState(STATE newState) {
+    assert stateModel!=null: "null state in "+name + " " + this.getClass();
     STATE original = stateModel.enterState(newState);
     if (original != newState) {
       LOG.info("Service:" + getName() + " entered state " + getServiceState());

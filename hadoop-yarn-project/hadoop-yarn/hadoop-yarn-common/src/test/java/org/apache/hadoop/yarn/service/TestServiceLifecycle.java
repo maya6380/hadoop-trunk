@@ -19,10 +19,13 @@
 
 package org.apache.hadoop.yarn.service;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
 
 public class TestServiceLifecycle extends ServiceAssert {
+  private static Log LOG = LogFactory.getLog(TestServiceLifecycle.class);
 
   /**
    * Walk the {@link BreakableService} through it's lifecycle, 
@@ -162,7 +165,12 @@ public class TestServiceLifecycle extends ServiceAssert {
     BreakableService svc = new BreakableService(false, false, true);
     svc.init(new Configuration());
     svc.start();
-    svc.stop();
+    try {
+      svc.stop();
+      fail("Expected a failure, got " + svc);
+    } catch (BreakableService.BrokenLifecycleEvent e) {
+      //expected
+    }
     assertStateCount(svc, Service.STATE.STOPPED, 1);
   }
 
@@ -209,10 +217,10 @@ public class TestServiceLifecycle extends ServiceAssert {
 
   @Test
   public void testInitNullConf() throws Throwable {
-    BreakableService svc = new BreakableService(true, false, true);
+    BreakableService svc = new BreakableService(false, false, false);
     try {
       svc.init(null);
-      fail("Expected a failure, got " + svc);
+      LOG.warn("Null Configurations are permitted ");
     } catch (ServiceStateException e) {
       //expected
     }

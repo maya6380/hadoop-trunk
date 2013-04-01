@@ -254,10 +254,15 @@ public class TestServiceOperations extends ServiceAssert {
   public void testFailingStop() throws Throwable {
     BreakableService svc = new BreakableService(false, false, true);
     ServiceOperations.deploy(svc, new Configuration());
-    ServiceOperations.stop(svc);
+    try {
+      ServiceOperations.stop(svc);
+      fail("Expected a failure, got " + svc);
+    } catch (BreakableService.BrokenLifecycleEvent e) {
+      //expected
+    }
     assertStateCount(svc, Service.STATE.STOPPED, 1);
     //now try to stop, this time doing it quietly
-    Throwable exception = ServiceOperations.stopQuietly(svc);
+    Exception exception = ServiceOperations.stopQuietly(svc);
     assertNull(exception);
   }
 

@@ -148,17 +148,8 @@ public final class ServiceOperations {
    * @param service a service; may be null
    * @return any exception that was caught; null if none was.
    */
-  public static Throwable stopQuietly(Service service) {
-    Log log = LOG;
-    try {
-      stop(service);
-    } catch (Throwable e) {
-      log.warn("When stopping the service " + service.getName()
-               + " : " + e,
-               e);
-      return e;
-    }
-    return null;
+  public static Exception stopQuietly(Service service) {
+    return stopQuietly(LOG, service);
   }
 
   /**
@@ -172,10 +163,10 @@ public final class ServiceOperations {
    * @see ServiceOperations#stopQuietly(Service)
    * 
    */
-  protected static Throwable stopQuietly(Log log, Service service) {
+  public static Exception stopQuietly(Log log, Service service) {
     try {
       stop(service);
-    } catch (Throwable e) {
+    } catch (Exception e) {
       log.warn("When stopping the service " + service.getName()
                + " : " + e,
                e);

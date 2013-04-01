@@ -72,15 +72,29 @@ public class CompositeService extends AbstractService {
   }
 
   protected void innerStop() throws Exception{
-    //stop all started services
-    stop(serviceStartedCount);
+    //stop all services in reverse order
+    stop(serviceList.size());
   }
 
+  /**
+   * Stop the services in reverse order
+   * @param numOfServicesStarted index from where the stop should work
+   * @throws RuntimeException the first exception raised during the 
+   * stop process -<i>after all services are stopped</i>
+   */
   private synchronized void stop(int numOfServicesStarted) {
     // stop in reserve order of start
-    for (int i = numOfServicesStarted-1; i >= 0; i--) {
+    Exception firstException = null;
+    for (int i = numOfServicesStarted - 1; i >= 0; i--) {
       Service service = serviceList.get(i);
-      ServiceOperations.stopQuietly(service);
+      Exception ex = ServiceOperations.stopQuietly(LOG, service);
+      if (ex != null && firstException == null) {
+        firstException = ex;
+      }
+    }
+    //after stopping all services, rethrow the first exception raised
+    if (firstException != null) {
+      throw ServiceStateException.convert(firstException);
     }
   }
 

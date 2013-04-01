@@ -21,9 +21,10 @@ package org.apache.hadoop.yarn.util;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.YarnRuntimeException;
-import org.apache.hadoop.yarn.service.BreakableService;
 import org.apache.hadoop.yarn.service.CompositeService;
 import org.apache.hadoop.yarn.service.Service;
 import org.apache.hadoop.yarn.service.Service.STATE;
@@ -37,6 +38,7 @@ public class TestCompositeService {
 
   private static final int FAILED_SERVICE_SEQ_NUMBER = 2;
 
+  private static Log LOG  = LogFactory.getLog(TestCompositeService.class);
   @Before
   public void setup() {
     CompositeServiceImpl.resetCounter();
@@ -142,17 +144,8 @@ public class TestCompositeService {
       serviceManager.start();
       fail("Exception should have been thrown due to startup failure of last service");
     } catch (YarnRuntimeException e) {
-      for (int i = 0; i < NUM_OF_SERVICES - 1; i++) {
-        if (i >= FAILED_SERVICE_SEQ_NUMBER) {
-          // Failed service state should be INITED
-          assertEquals("Service state should have been ", STATE.INITED,
-              services[NUM_OF_SERVICES - 1].getServiceState());
-        } else {
-          assertEquals("Service state should have been ", STATE.STOPPED,
-              services[i].getServiceState());
-        }
-      }
-
+      //all services should have been stopped
+      assertInState(services, STATE.STOPPED);
     }
   }
 
@@ -183,8 +176,8 @@ public class TestCompositeService {
     try {
       serviceManager.stop();
     } catch (YarnRuntimeException e) {
-      assertInState(services, STATE.STOPPED);
     }
+    assertInState(services, STATE.STOPPED);
   }
 
   /**
@@ -246,7 +239,6 @@ public class TestCompositeService {
     serviceManager.init(new Configuration());
     serviceManager.stop();
     assertInState(services, STATE.STOPPED);
-    assertEquals(NUM_OF_SERVICES, CompositeServiceImpl.getCounter());
   }
 
   /**
@@ -261,7 +253,7 @@ public class TestCompositeService {
     serviceManager.addTestService(service);
     try {
       serviceManager.init(null);
-      fail("Expected a failure, got " + serviceManager);
+      LOG.warn("Null Configurations are permitted " + serviceManager);
     } catch (ServiceStateException e) {
       //expected
     }
