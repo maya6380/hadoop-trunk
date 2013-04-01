@@ -215,7 +215,7 @@ public class MiniYARNCluster extends CompositeService {
               "ResourceManager failed to start. Final state is "
                   + resourceManager.getServiceState());
         }
-        super.start();
+        super.innerStart();
       } catch (Throwable t) {
         throw new YarnRuntimeException(t);
       }
