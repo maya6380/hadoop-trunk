@@ -113,13 +113,17 @@ public class LocalContainerLauncher extends AbstractService implements
     // after running (e.g., "localizeForTask()" or "localizeForMapTask()").
   }
 
-  public void innerStart() {
+  public void innerStart() throws Exception {
     eventHandlingThread = new Thread(new SubtaskRunner(), "uber-SubtaskRunner");
     eventHandlingThread.start();
+    super.innerStart();
   }
 
-  public void innerStop() {
-    eventHandlingThread.interrupt();
+  public void innerStop() throws Exception {
+    if (eventHandlingThread != null) {
+      eventHandlingThread.interrupt();
+    }
+    super.innerStop();
   }
 
   @Override
