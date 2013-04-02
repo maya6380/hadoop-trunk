@@ -1228,7 +1228,29 @@ public class TestConfiguration extends TestCase {
    Class<?> clazz = config.getClassByNameOrNull("java.lang.Object");
    assertNotNull(clazz);
   }
-  
+
+  /**
+   * verify that when an XML parse exception is raised (and wrapped),
+   * the wrapper Exception includes the name of the resource at fault
+   * @throws Exception
+   */
+  public void testInvalidResource() throws Exception {
+    out = new BufferedWriter(new FileWriter(CONFIG));
+    out.write("<?xml version=\"1.0\"?>\n");
+    out.write("<configuration>\n");
+    out.close();
+    Path fileResource = new Path(CONFIG);
+    conf.addResource(fileResource);
+    try {
+      conf.get("key");
+      fail("Expected a failure");
+    } catch (RuntimeException e) {
+      String msg = e.toString();
+      assertTrue("wrong error text "+ msg,
+                 msg.contains("test-config.xml"));
+    }
+  }
+
   public static void main(String[] argv) throws Exception {
     junit.textui.TestRunner.main(new String[]{
       TestConfiguration.class.getName()

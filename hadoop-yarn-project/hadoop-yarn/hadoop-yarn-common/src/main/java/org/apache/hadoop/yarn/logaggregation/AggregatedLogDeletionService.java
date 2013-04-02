@@ -127,7 +127,7 @@ public class AggregatedLogDeletionService extends AbstractService {
   }
 
   @Override
-  protected void innerStart() {
+  protected void innerStart() throws Exception {
     Configuration conf = getConfig();
     if (!conf.getBoolean(YarnConfiguration.LOG_AGGREGATION_ENABLED,
         YarnConfiguration.DEFAULT_LOG_AGGREGATION_ENABLED)) {
@@ -151,12 +151,14 @@ public class AggregatedLogDeletionService extends AbstractService {
     TimerTask task = new LogDeletionTask(conf, retentionSecs);
     timer = new Timer();
     timer.scheduleAtFixedRate(task, 0, checkIntervalMsecs);
+    super.innerStart();
   }
 
   @Override
-  protected void innerStop() {
+  protected void innerStop() throws Exception {
     if(timer != null) {
       timer.cancel();
     }
+    super.innerStop();
   }
 }
