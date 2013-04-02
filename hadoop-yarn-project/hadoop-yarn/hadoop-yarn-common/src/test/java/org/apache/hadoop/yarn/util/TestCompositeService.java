@@ -24,7 +24,11 @@ import static org.junit.Assert.fail;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+<<<<<<< HEAD
 import org.apache.hadoop.yarn.YarnRuntimeException;
+=======
+import org.apache.hadoop.yarn.YarnException;
+>>>>>>> remove trailing whitespace, reduce diff between branch and trunk
 import org.apache.hadoop.yarn.service.CompositeService;
 import org.apache.hadoop.yarn.service.Service;
 import org.apache.hadoop.yarn.service.Service.STATE;
@@ -196,7 +200,7 @@ public class TestCompositeService {
   }
 
   /**
-   * Shut down from not-inited, assert that none were 
+   * Shut down from not-inited, assert that none were
    */
   @Test
   public void testServiceStopFromNotInited() {
@@ -258,7 +262,7 @@ public class TestCompositeService {
       //expected
     }
   }
-  
+
   /**
    * Shut down from not-inited, assert that none were 
    */
@@ -334,6 +338,11 @@ public class TestCompositeService {
 
     public void setThrowExceptionOnStop(boolean throwExceptionOnStop) {
       this.throwExceptionOnStop = throwExceptionOnStop;
+    }
+
+    @Override
+    public String toString() {
+      return "Service " + getName();
     }
 
   }
