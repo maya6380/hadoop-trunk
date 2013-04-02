@@ -125,7 +125,8 @@ public abstract class AbstractService implements Service {
    */
   @Override
   public void init(Configuration conf) {
-/*    if (conf == null) {
+   /* ISSUE: should null configuration be allowed or rejected?
+   if (conf == null) {
       throw new ServiceStateException("Cannot initialize service "
                                       + getName() + ": null configuration");
     }
@@ -176,7 +177,6 @@ public abstract class AbstractService implements Service {
         innerStop();
       } catch (Exception e) {
         //stop-time exceptions are logged if they are the first one,
-        // but not acted on
         noteFailure(e);
         throw ServiceStateException.convert(e);
       } finally {

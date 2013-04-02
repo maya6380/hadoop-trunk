@@ -62,10 +62,18 @@ public interface Service {
       this.statename = name;
     }
 
+    /**
+     * Get the integer value of a state
+     * @return the numeric value of the state
+     */
     public int getValue() {
       return value;
     }
 
+    /**
+     * Get the name of a state
+     * @return the state's name
+     */
     @Override
     public String toString() {
       return statename;
@@ -148,9 +156,9 @@ public interface Service {
   boolean inState(STATE state);
 
   /**
-   * Get the first exception raised during the service failure. If null, no exception was logged
+   * Get the first exception raised during the service failure. If null,
+   * no exception was logged
    * @return the failure logged during a transition to the stopped state
-
    */
   Throwable getFailureCause();
 

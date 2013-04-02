@@ -35,7 +35,6 @@ public class CompositeService extends AbstractService {
   private static final Log LOG = LogFactory.getLog(CompositeService.class);
 
   private List<Service> serviceList = new ArrayList<Service>();
-  private int serviceStartedCount = 0;
 
   public CompositeService(String name) {
     super(name);
@@ -65,8 +64,6 @@ public class CompositeService extends AbstractService {
       // start the service. If this fails that service
       // will be stopped and an exception raised
       service.start();
-      //after starting the service, increment the service count.
-      ++serviceStartedCount;
     }
     super.innerStart();
   }
