@@ -20,6 +20,7 @@ package org.apache.hadoop.yarn.service;
 
 import org.apache.hadoop.conf.Configuration;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -45,6 +46,11 @@ public class FilterService implements Service {
   @Override
   public void stop() {
     service.stop();
+  }
+
+  @Override
+  public void close() throws IOException {
+    service.close();
   }
 
   @Override

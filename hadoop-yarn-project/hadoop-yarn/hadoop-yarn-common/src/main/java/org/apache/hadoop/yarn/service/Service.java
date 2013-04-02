@@ -20,6 +20,8 @@ package org.apache.hadoop.yarn.service;
 
 import org.apache.hadoop.conf.Configuration;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +29,7 @@ import java.util.Map;
 /**
  * Service LifeCycle.
  */
-public interface Service {
+public interface Service extends Closeable {
 
   /**
    * Service states
@@ -83,9 +85,13 @@ public interface Service {
   /**
    * Initialize the service.
    *
-   * The transition must be from {@link STATE#NOTINITED} to {@link STATE#INITED}
-   * unless the operation failed and an exception was raised.
+   * The transition MUST be from {@link STATE#NOTINITED} to {@link STATE#INITED}
+   * unless the operation failed and an exception was raised, in which case
+   * {@link #stop()} MUST be invoked and the service enter the state
+   * {@link STATE#STOPPED}.
    * @param config the configuration of the service
+   * @throws RuntimeException on any failure during the operation
+
    */
   void init(Configuration config);
 
@@ -93,19 +99,35 @@ public interface Service {
   /**
    * Start the service.
    *
-   * The transition should be from {@link STATE#INITED} to {@link STATE#STARTED}
-   * unless the operation failed and an exception was raised.
+   * The transition MUST be from {@link STATE#INITED} to {@link STATE#STARTED}
+   * unless the operation failed and an exception was raised, in which case
+   * {@link #stop()} MUST be invoked and the service enter the state
+   * {@link STATE#STOPPED}.
+   * @throws RuntimeException on any failure during the operation
    */
 
   void start();
 
   /**
-   * Stop the service.
+   * Stop the service. This MUST be a no-op if the service is already
+   * in the {@link STATE#STOPPED} state. It SHOULD be a best-effort attempt
+   * to stop all parts of the service.
    *
-   * This operation must be designed to complete regardless of the initial state
-   * of the service, including the state of all its internal fields.
+   * The implementation must be designed to complete regardless of the service
+   * state, including the initialized/uninitialized state of all its internal
+   * fields.
+   * @throws RuntimeException on any failure during the stop operation
    */
   void stop();
+
+  /**
+   * A version of stop() that is designed to be usable in Java7 closure
+   * clauses.
+   * Implementation classes MUST relay this directly to {@link #stop()}
+   * @throws IOException never
+   * @throws RuntimeException on any failure during the stop operation
+   */
+  void close() throws IOException;
 
   /**
    * Register an instance of the service state change events.

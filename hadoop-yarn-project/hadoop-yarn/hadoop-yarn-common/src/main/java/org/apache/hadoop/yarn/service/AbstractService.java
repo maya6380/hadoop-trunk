@@ -18,6 +18,7 @@
 
 package org.apache.hadoop.yarn.service;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -194,6 +195,15 @@ public abstract class AbstractService implements Service {
         LOG.debug("Ignoring re-entrant call to stop()");
       }
     }
+  }
+
+  /**
+   * Relay to {@link #stop()}
+   * @throws IOException
+   */
+  @Override
+  public void close() throws IOException {
+    stop();
   }
 
   /**
