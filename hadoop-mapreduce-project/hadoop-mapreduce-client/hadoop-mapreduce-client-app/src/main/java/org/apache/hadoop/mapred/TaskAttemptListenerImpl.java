@@ -99,7 +99,7 @@ public class TaskAttemptListenerImpl extends CompositeService
    registerHeartbeatHandler(conf);
    commitWindowMs = conf.getLong(MRJobConfig.MR_AM_COMMIT_WINDOW_MS,
        MRJobConfig.DEFAULT_MR_AM_COMMIT_WINDOW_MS);
-    super.innerInit(conf);
+   super.innerInit(conf);
   }
 
   @Override
