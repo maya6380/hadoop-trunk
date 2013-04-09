@@ -263,7 +263,7 @@ public class TestCompositeService {
   }
 
   /**
-   * Shut down from not-inited 
+   * Shut down from inited
    */
   @Test
   public void testServiceStopFromInited() {
@@ -322,7 +322,7 @@ public class TestCompositeService {
     public static boolean isPolicyToStopOnlyStartedServices() {
       return STOP_ONLY_STARTED_SERVICES;
     }
-      
+
     private static int counter = -1;
 
     private int callSequenceNumber = -1;

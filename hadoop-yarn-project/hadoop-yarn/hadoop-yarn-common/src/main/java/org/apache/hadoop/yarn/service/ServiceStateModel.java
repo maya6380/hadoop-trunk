@@ -26,7 +26,6 @@ public class ServiceStateModel {
   /**
    * Map of all valid state transitions
    * [current] [proposed1, proposed2, ...]
-   * 
    */
   private static final boolean[][] statemap =
     {
@@ -79,8 +78,8 @@ public class ServiceStateModel {
    */
   public boolean inState(Service.STATE proposed) {
     return state.equals(proposed);
-  } 
-  
+  }
+
   /**
    * Verify that that a service is in a given state.
    * @param expectedState the desired state
@@ -97,7 +96,7 @@ public class ServiceStateModel {
   }
 
   /**
-   * Enter a state -thread safe. 
+   * Enter a state -thread safe.
    *
    * @param proposed proposed new state
    * @return the original state
@@ -112,7 +111,7 @@ public class ServiceStateModel {
   }
 
   /**
-   * Check that a state tansition is valid and 
+   * Check that a state tansition is valid and
    * throw an exception if not
    * @param name name of the service (can be null)
    * @param state current state
@@ -122,7 +121,7 @@ public class ServiceStateModel {
                                           Service.STATE state,
                                           Service.STATE proposed) {
     if (!isValidStateTransition(state, proposed)) {
-      throw new ServiceStateException(name + " cannot enter state " 
+      throw new ServiceStateException(name + " cannot enter state "
                                       + proposed + " from state " + state);
     }
   }
@@ -151,7 +150,7 @@ public class ServiceStateModel {
    */
   @Override
   public String toString() {
-    return (name.isEmpty() ? "" : ((name) + ": ")) 
+    return (name.isEmpty() ? "" : ((name) + ": "))
             + state.toString();
   }
 

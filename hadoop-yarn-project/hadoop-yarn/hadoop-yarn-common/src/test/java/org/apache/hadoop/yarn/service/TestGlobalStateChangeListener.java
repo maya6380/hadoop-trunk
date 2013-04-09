@@ -140,7 +140,7 @@ public class TestGlobalStateChangeListener extends ServiceAssert {
     BreakableService service = new BreakableService();
     service.init(new Configuration());
     //expected notifications to fail
-    
+
     //still should record its invocation
     assertListenerState(listener, Service.STATE.INITED);
     assertListenerEventCount(listener, 1);

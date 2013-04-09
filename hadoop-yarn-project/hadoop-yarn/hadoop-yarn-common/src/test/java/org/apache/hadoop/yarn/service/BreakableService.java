@@ -108,9 +108,9 @@ public class BreakableService extends AbstractService {
    * The exception explicitly raised on a failure
    */
   public static class BrokenLifecycleEvent extends RuntimeException {
-    
+
     final STATE state;
-    
+
     public BrokenLifecycleEvent(Service service, String action) {
       super("Lifecycle Failure during " + action + " state is "
             + service.getServiceState());

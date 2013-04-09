@@ -65,7 +65,7 @@ public final class ServiceOperations {
   }
 
   /**
-   * Check that a state tansition is valid and 
+   * Check that a state tansition is valid and
    * throw an exception if not
    * @param service the service to probe
    * @param proposed proposed new state
@@ -161,7 +161,6 @@ public final class ServiceOperations {
    * @param service a service; may be null
    * @return any exception that was caught; null if none was.
    * @see ServiceOperations#stopQuietly(Service)
-   * 
    */
   public static Exception stopQuietly(Log log, Service service) {
     try {
@@ -219,7 +218,7 @@ public final class ServiceOperations {
 
     /**
      * Change to a new state and notify all listeners.
-     * This method will block until all notifications have been issued. 
+     * This method will block until all notifications have been issued.
      * It caches the list of listeners before the notification begins,
      * so additions or removal of listeners will not be visible.
      * @param service the service that has changed state

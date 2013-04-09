@@ -53,7 +53,7 @@ public interface Service extends Closeable {
      * identify the numbers gives more stability guarantees over time.
      */
     private final int value;
-    
+
     /**
      * A name of the state that can be used in messages
      */
@@ -170,7 +170,7 @@ public interface Service extends Closeable {
   long getStartTime();
 
   /**
-   * Query to see if the service is in a specific state. 
+   * Query to see if the service is in a specific state.
    * In a multi-threaded system, the state may not hold for very long.
    * @param state the expected state
    * @return true if, at the time of invocation, the service was in that state.
@@ -192,7 +192,7 @@ public interface Service extends Closeable {
 
   /**
    * Block waiting for the service to stop; uses the termination notification
-   * object to do so. 
+   * object to do so.
    *
    * This method will only return after all the service stop actions
    * have been executed (to success or failure), or the timeout elapsed
@@ -216,7 +216,7 @@ public interface Service extends Closeable {
    */
   public class LifecycleEvent implements Serializable {
     /**
-     * Local time in milliseconds when the event occurred 
+     * Local time in milliseconds when the event occurred
      */
     public long time;
     /**

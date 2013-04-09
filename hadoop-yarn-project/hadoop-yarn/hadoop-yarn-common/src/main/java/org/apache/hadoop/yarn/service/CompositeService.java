@@ -38,7 +38,7 @@ public class CompositeService extends AbstractService {
    * Policy on shutdown: attempt to close everything (purest) or
    * only try to close started services (which assumes
    * that the service implementations may not handle the stop() operation
-   * except when started. 
+   * except when started.
    * Irrespective of this policy, if a child service fails during
    * its init() or start() operations, it will have stop() called on it.
    */
