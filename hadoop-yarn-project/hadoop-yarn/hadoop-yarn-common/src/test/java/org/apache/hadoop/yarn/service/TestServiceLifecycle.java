@@ -196,7 +196,7 @@ public class TestServiceLifecycle extends ServiceAssert {
   @Test
   public void testStopFailingInitAndStop() throws Throwable {
     BreakableService svc = new BreakableService(true, false, true);
-    svc.register(new ServiceStateLogListener());
+    svc.register(new LoggingStateChangeListener());
     try {
       svc.init(new Configuration());
       fail("Expected a failure, got " + svc);
@@ -211,7 +211,7 @@ public class TestServiceLifecycle extends ServiceAssert {
     assertNotNull("Null failure cause in " + svc, failureCause);
     BreakableService.BrokenLifecycleEvent cause =
       (BreakableService.BrokenLifecycleEvent) failureCause;
-    assertNotNull("null state in "+ cause + " raised by "+ svc ,cause.state);
+    assertNotNull("null state in " + cause + " raised by " + svc, cause.state);
     assertEquals(Service.STATE.INITED, cause.state);
   }
 
@@ -225,4 +225,40 @@ public class TestServiceLifecycle extends ServiceAssert {
       //expected
     }
   }
+
+  @Test
+  public void testServiceNotifications() throws Throwable {
+    BreakableService svc = new BreakableService(false, false, false);
+    BreakableStateChangeListener listener = new BreakableStateChangeListener();
+    svc.register(listener);
+    svc.init(new Configuration());
+    assertEquals(1, listener.getEventCount());
+    svc.start();
+    assertEquals(2, listener.getEventCount());
+    svc.stop();
+    assertEquals(3, listener.getEventCount());
+    svc.stop();
+    assertEquals(3, listener.getEventCount());
+  }
+
+  @Test
+  public void testServiceFailingNotifications() throws Throwable {
+    BreakableService svc = new BreakableService(false, false, false);
+    BreakableStateChangeListener listener = new BreakableStateChangeListener();
+    listener.setFailingState(Service.STATE.STARTED);
+    svc.register(listener);
+    svc.init(new Configuration());
+    assertEquals(1, listener.getEventCount());
+    //start this; the listener failed but this won't show
+    svc.start();
+    //counter went up
+    assertEquals(2, listener.getEventCount());
+    assertEquals(1, listener.getFailureCount());
+    //stop the service -this doesn't fail
+    svc.stop();
+    assertEquals(3, listener.getEventCount());
+    assertEquals(1, listener.getFailureCount());
+    svc.stop();
+  }
+
 }

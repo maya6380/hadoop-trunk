@@ -153,8 +153,12 @@ public class CommitterEventHandler extends AbstractService
       // return if already stopped
       return;
     }
-    eventHandlingThread.interrupt();
-    launcherPool.shutdown();
+    if (eventHandlingThread != null) {
+      eventHandlingThread.interrupt();
+    }
+    if (launcherPool != null) {
+      launcherPool.shutdown();
+    }
     super.innerStop();
   }
 

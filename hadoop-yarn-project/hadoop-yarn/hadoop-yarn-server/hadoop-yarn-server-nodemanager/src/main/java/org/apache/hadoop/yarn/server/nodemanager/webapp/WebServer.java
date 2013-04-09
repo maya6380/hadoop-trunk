@@ -67,6 +67,7 @@ public class WebServer extends AbstractService {
       LOG.error(msg, e);
       throw new YarnRuntimeException(msg, e);
     }
+    super.innerStart();
   }
 
   public int getPort() {
@@ -74,10 +75,11 @@ public class WebServer extends AbstractService {
   }
 
   @Override
-  protected void innerStop() {
+  protected void innerStop() throws Exception {
     if (this.webApp != null) {
       this.webApp.stop();
     }
+    super.innerStop();
   }
 
   public static class NMWebApp extends WebApp implements YarnWebParams {

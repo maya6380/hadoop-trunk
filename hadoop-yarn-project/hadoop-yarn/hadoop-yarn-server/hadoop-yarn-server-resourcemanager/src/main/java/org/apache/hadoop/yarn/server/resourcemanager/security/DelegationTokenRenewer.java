@@ -88,17 +88,18 @@ public class DelegationTokenRenewer extends AbstractService {
   }
 
   @Override
-  protected synchronized void innerInit(Configuration conf) {
+  protected synchronized void innerInit(Configuration conf) throws Exception {
     this.tokenKeepAliveEnabled =
         conf.getBoolean(YarnConfiguration.LOG_AGGREGATION_ENABLED,
             YarnConfiguration.DEFAULT_LOG_AGGREGATION_ENABLED);
     this.tokenRemovalDelayMs =
         conf.getInt(YarnConfiguration.RM_NM_EXPIRY_INTERVAL_MS,
             YarnConfiguration.DEFAULT_RM_NM_EXPIRY_INTERVAL_MS);
+    super.innerInit(conf);
   }
 
   @Override
-  protected void innerStart() {
+  protected void innerStart() throws Exception {
     
     dtCancelThread.start();
     renewalTimer = new Timer(true);
@@ -108,6 +109,7 @@ public class DelegationTokenRenewer extends AbstractService {
               "DelayedTokenCanceller");
       delayedRemovalThread.start();
     }
+    super.innerStart();
   }
 
   @Override

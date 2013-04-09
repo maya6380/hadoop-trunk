@@ -247,7 +247,9 @@ public class RMContainerAllocator extends RMContainerRequestor
       // return if already stopped
       return;
     }
-    eventHandlingThread.interrupt();
+    if (eventHandlingThread != null) {
+      eventHandlingThread.interrupt();
+    }
     super.innerStop();
     scheduleStats.log("Final Stats: ");
   }

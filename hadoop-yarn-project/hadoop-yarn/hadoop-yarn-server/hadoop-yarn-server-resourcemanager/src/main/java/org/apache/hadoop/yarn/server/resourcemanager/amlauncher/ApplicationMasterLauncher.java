@@ -53,6 +53,7 @@ public class ApplicationMasterLauncher extends AbstractService implements
   @Override
   protected void innerStart() throws Exception {
     launcherHandlingThread.start();
+    super.innerStart();
   }
   
   protected Runnable createRunnableLauncher(RMAppAttempt application, 

@@ -150,7 +150,9 @@ public class TaskAttemptListenerImpl extends CompositeService
   }
 
   protected void stopRpcServer() {
-    server.stop();
+    if (server != null) {
+      server.stop();
+    }
   }
 
   @Override

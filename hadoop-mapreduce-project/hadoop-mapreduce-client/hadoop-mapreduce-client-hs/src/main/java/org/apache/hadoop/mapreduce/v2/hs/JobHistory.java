@@ -151,10 +151,12 @@ public class JobHistory extends AbstractService implements HistoryContext {
         scheduledExecutor.shutdownNow();
       }
     }
-    if (storage instanceof Service) {
+    if (storage != null && storage instanceof Service) {
       ((Service) storage).stop();
     }
-    hsManager.stop();
+    if (hsManager != null) {
+      hsManager.stop();
+    }
     super.innerStop();
   }
 

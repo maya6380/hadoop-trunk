@@ -123,7 +123,9 @@ public class JobHistoryServer extends CompositeService {
   
   @Override
   protected void innerStop() throws Exception {
-    jhsDTSecretManager.stopThreads();
+    if (jhsDTSecretManager != null) {
+      jhsDTSecretManager.stopThreads();
+    }
     DefaultMetricsSystem.shutdown();
     super.innerStop();
   }

@@ -25,10 +25,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 
+/**
+ * This is the base implementation class for YARN services.
+ */
 public abstract class AbstractService implements Service {
 
   private static final Log LOG = LogFactory.getLog(AbstractService.class);
@@ -331,13 +335,39 @@ public abstract class AbstractService implements Service {
   }
 
   @Override
-  public synchronized void register(ServiceStateChangeListener l) {
+  public void register(ServiceStateChangeListener l) {
     listeners.add(l);
   }
 
   @Override
-  public synchronized void unregister(ServiceStateChangeListener l) {
+  public void unregister(ServiceStateChangeListener l) {
     listeners.remove(l);
+  }
+
+  /**
+   * Register a global listener, which receives notifications
+   * from the state change events of all services in the JVM
+   * @param l listener
+   */
+  public static void registerGlobalListener(ServiceStateChangeListener l) {
+    globalListeners.add(l);
+  }
+
+  /**
+   * unregister a global listener.
+   * @param l listener to unregister
+   * @return true if the listener was found (and then deleted)
+   */
+  public static boolean unregisterGlobalListener(ServiceStateChangeListener l) {
+    return globalListeners.remove(l);
+  }
+
+  /**
+   * Package-scoped method for testing -resets the global listener list
+   */
+  @VisibleForTesting
+  static void resetGlobalListeners() {
+    globalListeners.reset();
   }
 
   @Override
@@ -356,7 +386,8 @@ public abstract class AbstractService implements Service {
   }
 
   /**
-   * Notify local and global listeners of state changes
+   * Notify local and global listeners of state changes.
+   * Exceptions raised by listeners are NOT passed up.
    */
   private void notifyListeners() {
     try {
@@ -415,6 +446,7 @@ public abstract class AbstractService implements Service {
   public String toString() {
     return "Service " + name + " in state " + stateModel;
   }
+  
 
   /**
    * Put a blocker to the blocker map -replacing any

@@ -784,7 +784,7 @@ public class MRAppMaster extends CompositeService {
     }
 
     @Override
-    protected void innerStart() {
+    protected void innerStart() throws Exception {
       if (job.isUber()) {
         this.containerAllocator = new LocalContainerAllocator(
             this.clientService, this.context, nmHost, nmPort, nmHttpPort
@@ -795,11 +795,13 @@ public class MRAppMaster extends CompositeService {
       }
       ((Service)this.containerAllocator).init(getConfig());
       ((Service)this.containerAllocator).start();
+      super.innerStart();
     }
 
     @Override
-    protected void innerStop() {
+    protected void innerStop() throws Exception {
       stopService((Service)this.containerAllocator);
+      super.innerStop();
     }
 
     @Override
@@ -841,7 +843,7 @@ public class MRAppMaster extends CompositeService {
     }
 
     @Override
-    protected void innerStart() {
+    protected void innerStart() throws Exception {
       if (job.isUber()) {
         this.containerLauncher = new LocalContainerLauncher(context,
             (TaskUmbilicalProtocol) taskAttemptListener);
@@ -850,6 +852,7 @@ public class MRAppMaster extends CompositeService {
       }
       ((Service)this.containerLauncher).init(getConfig());
       ((Service)this.containerLauncher).start();
+      super.innerStart();
     }
 
     @Override
@@ -858,8 +861,9 @@ public class MRAppMaster extends CompositeService {
     }
 
     @Override
-    protected void innerStop() {
+    protected void innerStop() throws Exception {
       stopService((Service) this.containerLauncher);
+      super.innerStop();
     }
   }
 
@@ -869,7 +873,7 @@ public class MRAppMaster extends CompositeService {
     }
 
     @Override
-    protected void innerStop() {
+    protected void innerStop() throws Exception {
       try {
         if(isLastAMRetry) {
           cleanupStagingDir();
@@ -880,6 +884,7 @@ public class MRAppMaster extends CompositeService {
       } catch (IOException io) {
         LOG.error("Failed to cleanup staging dir: ", io);
       }
+      super.innerStop();
     }
   }
 

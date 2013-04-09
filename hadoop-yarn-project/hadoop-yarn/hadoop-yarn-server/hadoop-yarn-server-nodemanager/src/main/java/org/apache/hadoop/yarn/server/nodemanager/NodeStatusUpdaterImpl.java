@@ -151,7 +151,7 @@ public class NodeStatusUpdaterImpl extends AbstractService implements
   }
 
   @Override
-  protected void innerStart() {
+  protected void innerStart() throws Exception {
 
     // NodeManager is the last service to start, so NodeId is available.
     this.nodeId = this.context.getNodeId();
@@ -165,6 +165,7 @@ public class NodeStatusUpdaterImpl extends AbstractService implements
     } catch (Exception e) {
       throw new AvroRuntimeException(e);
     }
+    super.innerStart();
   }
 
   @Override

@@ -24,11 +24,7 @@ import static org.junit.Assert.fail;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-<<<<<<< HEAD
 import org.apache.hadoop.yarn.YarnRuntimeException;
-=======
-import org.apache.hadoop.yarn.YarnException;
->>>>>>> remove trailing whitespace, reduce diff between branch and trunk
 import org.apache.hadoop.yarn.service.CompositeService;
 import org.apache.hadoop.yarn.service.Service;
 import org.apache.hadoop.yarn.service.Service.STATE;
@@ -42,7 +38,16 @@ public class TestCompositeService {
 
   private static final int FAILED_SERVICE_SEQ_NUMBER = 2;
 
-  private static Log LOG  = LogFactory.getLog(TestCompositeService.class);
+  private static final Log LOG  = LogFactory.getLog(TestCompositeService.class);
+
+  /**
+   * flag to state policy of CompositeService, and hence 
+   * what to look for after trying to stop a service from another state
+   * (e.g inited)
+   */
+  private static final boolean STOP_ONLY_STARTED_SERVICES =
+    CompositeServiceImpl.isPolicyToStopOnlyStartedServices();
+  
   @Before
   public void setup() {
     CompositeServiceImpl.resetCounter();
@@ -69,7 +74,7 @@ public class TestCompositeService {
     serviceManager.init(conf);
 
     //verify they were all inited
-    assertInState(services, STATE.INITED);
+    assertInState(STATE.INITED, services);
 
     // Verify the init() call sequence numbers for every service
     for (int i = 0; i < NUM_OF_SERVICES; i++) {
@@ -83,7 +88,7 @@ public class TestCompositeService {
 
     serviceManager.start();
     //verify they were all started
-    assertInState(services, STATE.STARTED);
+    assertInState(STATE.STARTED, services);
 
     // Verify the start() call sequence numbers for every service
     for (int i = 0; i < NUM_OF_SERVICES; i++) {
@@ -96,7 +101,7 @@ public class TestCompositeService {
 
     serviceManager.stop();
     //verify they were all stopped
-    assertInState(services, STATE.STOPPED);
+    assertInState(STATE.STOPPED, services);
 
     // Verify the stop() call sequence numbers for every service
     for (int i = 0; i < NUM_OF_SERVICES; i++) {
@@ -148,8 +153,16 @@ public class TestCompositeService {
       serviceManager.start();
       fail("Exception should have been thrown due to startup failure of last service");
     } catch (YarnRuntimeException e) {
-      //all services should have been stopped
-      assertInState(services, STATE.STOPPED);
+      for (int i = 0; i < NUM_OF_SERVICES - 1; i++) {
+        if (i >= FAILED_SERVICE_SEQ_NUMBER) {
+          // Failed service state should be INITED
+          assertEquals("Service state should have been ", STATE.INITED,
+              services[NUM_OF_SERVICES - 1].getServiceState());
+        } else {
+          assertEquals("Service state should have been ", STATE.STOPPED,
+              services[i].getServiceState());
+        }
+      }
     }
   }
 
@@ -181,26 +194,43 @@ public class TestCompositeService {
       serviceManager.stop();
     } catch (YarnRuntimeException e) {
     }
-    assertInState(services, STATE.STOPPED);
+    assertInState(STATE.STOPPED, services);
   }
 
   /**
    * Assert that all services are in the same expected state
-   * @param services services to examine
    * @param expected expected state value
+   * @param services services to examine
    */
-  private void assertInState(CompositeServiceImpl[] services,
-                             STATE expected) {
-    for (Service service: services) {
-      assertEquals("Service state should have been " + expected + " in "
-                   + service,
-                   expected,
-                   service.getServiceState());
-    }
+  private void assertInState(STATE expected, CompositeServiceImpl[] services) {
+    assertInState(expected, services,0, services.length);
   }
 
   /**
-   * Shut down from not-inited, assert that none were
+   * Assert that all services are in the same expected state
+   * @param expected expected state value
+   * @param services services to examine
+   * @param start start offset
+   * @param finish finish offset: the count stops before this number
+   */
+  private void assertInState(STATE expected,
+                             CompositeServiceImpl[] services,
+                             int start, int finish) {
+    for (int i = start; i < finish; i++) {
+      Service service = services[i];
+      assertInState(expected, service);
+    }
+  }
+
+  private void assertInState(STATE expected, Service service) {
+    assertEquals("Service state should have been " + expected + " in "
+                 + service,
+                 expected,
+                 service.getServiceState());
+  }
+
+  /**
+   * Shut down from not-inited
    */
   @Test
   public void testServiceStopFromNotInited() {
@@ -215,18 +245,25 @@ public class TestCompositeService {
     CompositeServiceImpl[] services = serviceManager.getServices().toArray(
       new CompositeServiceImpl[0]);
     serviceManager.stop();
-    assertInState(services, STATE.STOPPED);
-    // Verify the stop() call sequence numbers for every service
-    for (int i = 0; i < NUM_OF_SERVICES; i++) {
-      assertEquals("For " + services[i]
-                   + " service, stop() call sequence number should have been ",
-                   ((NUM_OF_SERVICES - 1) - i),
-                   services[i].getCallSequenceNumber());
+    if (STOP_ONLY_STARTED_SERVICES) {
+      //this policy => no services were stopped
+      assertInState(STATE.NOTINITED, services);
+    } else {
+      //this policy => all services were stopped in reverse order
+      assertInState(STATE.STOPPED, services);
+      // Verify the stop() call sequence numbers for every service
+      for (int i = 0; i < NUM_OF_SERVICES; i++) {
+        assertEquals("For " + services[i]
+                     +
+                     " service, stop() call sequence number should have been ",
+                     ((NUM_OF_SERVICES - 1) - i),
+                     services[i].getCallSequenceNumber());
+      }
     }
   }
 
   /**
-   * Shut down from not-inited, assert that none were 
+   * Shut down from not-inited 
    */
   @Test
   public void testServiceStopFromInited() {
@@ -242,7 +279,12 @@ public class TestCompositeService {
       new CompositeServiceImpl[0]);
     serviceManager.init(new Configuration());
     serviceManager.stop();
-    assertInState(services, STATE.STOPPED);
+    if (STOP_ONLY_STARTED_SERVICES) {
+      //this policy => no services were stopped
+      assertInState(STATE.INITED, services);
+    } else {
+      assertInState(STATE.STOPPED, services);
+    }
   }
 
   /**
@@ -264,7 +306,8 @@ public class TestCompositeService {
   }
 
   /**
-   * Shut down from not-inited, assert that none were 
+   * Walk the service through their lifecycle without any children;
+   * verify that it all works.
    */
   @Test
   public void testServiceLifecycleNoChildrenl() {
@@ -276,6 +319,10 @@ public class TestCompositeService {
 
     public static class CompositeServiceImpl extends CompositeService {
 
+    public static boolean isPolicyToStopOnlyStartedServices() {
+      return STOP_ONLY_STARTED_SERVICES;
+    }
+      
     private static int counter = -1;
 
     private int callSequenceNumber = -1;

@@ -128,7 +128,7 @@ public class TestClientTokens {
     }
 
     @Override
-    protected void innerStart() {
+    protected void innerStart() throws Exception {
       Configuration conf = getConfig();
 
       ClientToAMTokenSecretManager secretManager = null;
@@ -145,6 +145,7 @@ public class TestClientTokens {
       }
       server.start();
       this.address = NetUtils.getConnectAddress(server);
+      super.innerStart();
     }
   }
 

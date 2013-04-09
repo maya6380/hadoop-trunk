@@ -34,6 +34,16 @@ public class CompositeService extends AbstractService {
 
   private static final Log LOG = LogFactory.getLog(CompositeService.class);
 
+  /**
+   * Policy on shutdown: attempt to close everything (purest) or
+   * only try to close started services (which assumes
+   * that the service implementations may not handle the stop() operation
+   * except when started. 
+   * Irrespective of this policy, if a child service fails during
+   * its init() or start() operations, it will have stop() called on it.
+   */
+  protected static final boolean STOP_ONLY_STARTED_SERVICES = true;
+
   private List<Service> serviceList = new ArrayList<Service>();
 
   public CompositeService(String name) {
@@ -70,23 +80,30 @@ public class CompositeService extends AbstractService {
 
   protected void innerStop() throws Exception{
     //stop all services in reverse order
-    stop(serviceList.size());
+    stop(serviceList.size(), STOP_ONLY_STARTED_SERVICES);
+    super.innerStop();
   }
 
   /**
    * Stop the services in reverse order
+   *
    * @param numOfServicesStarted index from where the stop should work
+   * @param stopOnlyStartedServices
    * @throws RuntimeException the first exception raised during the 
    * stop process -<i>after all services are stopped</i>
    */
-  private synchronized void stop(int numOfServicesStarted) {
+  private synchronized void stop(int numOfServicesStarted,
+                                 boolean stopOnlyStartedServices) {
     // stop in reserve order of start
     Exception firstException = null;
     for (int i = numOfServicesStarted - 1; i >= 0; i--) {
       Service service = serviceList.get(i);
-      Exception ex = ServiceOperations.stopQuietly(LOG, service);
-      if (ex != null && firstException == null) {
-        firstException = ex;
+      STATE state = service.getServiceState();
+      if (!stopOnlyStartedServices || state == STATE.STARTED) {
+        Exception ex = ServiceOperations.stopQuietly(LOG, service);
+        if (ex != null && firstException == null) {
+          firstException = ex;
+        }
       }
     }
     //after stopping all services, rethrow the first exception raised

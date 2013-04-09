@@ -216,11 +216,13 @@ public abstract class RMCommunicator extends AbstractService
       // return if already stopped
       return;
     }
-    allocatorThread.interrupt();
-    try {
-      allocatorThread.join();
-    } catch (InterruptedException ie) {
-      LOG.warn("InterruptedException while stopping", ie);
+    if (allocatorThread != null) {
+      allocatorThread.interrupt();
+      try {
+        allocatorThread.join();
+      } catch (InterruptedException ie) {
+        LOG.warn("InterruptedException while stopping", ie);
+      }
     }
     if(shouldUnregister) {
       unregister();

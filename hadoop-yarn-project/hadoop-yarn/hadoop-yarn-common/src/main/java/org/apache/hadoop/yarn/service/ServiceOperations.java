@@ -189,20 +189,39 @@ public final class ServiceOperations {
     private final List<ServiceStateChangeListener> listeners =
       new ArrayList<ServiceStateChangeListener>();
 
+    /**
+     * Thread-safe addition of a new listener to the end of a list.
+     * Attempts to re-register a listener that is already registered
+     * will be ignored.
+     * @param l listener
+     */
     public synchronized void add(ServiceStateChangeListener l) {
-      listeners.add(l);
+      if(!listeners.contains(l)) {
+        listeners.add(l);
+      }
     }
 
-    public synchronized void remove(ServiceStateChangeListener l) {
-      listeners.remove(l);
+    /**
+     * Remove any registration of a listener from the listener list.
+     * @param l listener
+     * @return true if the listener was found (and then removed)
+     */
+    public synchronized boolean remove(ServiceStateChangeListener l) {
+      return listeners.remove(l);
+    }
+
+    /**
+     * Reset the listener list
+     */
+    public synchronized void reset() {
+      listeners.clear();
     }
 
     /**
      * Change to a new state and notify all listeners.
-     * This is a private method that is only invoked from synchronized methods,
-     * which avoid having to clone the listener list. It does imply that
-     * the state change listener methods should be short lived, as they
-     * will delay the state transition.
+     * This method will block until all notifications have been issued. 
+     * It caches the list of listeners before the notification begins,
+     * so additions or removal of listeners will not be visible.
      * @param service the service that has changed state
      */
     public void notifyListeners(Service service) {

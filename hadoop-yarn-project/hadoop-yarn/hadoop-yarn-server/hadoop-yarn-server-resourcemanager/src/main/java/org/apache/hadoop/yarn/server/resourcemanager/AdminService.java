@@ -92,7 +92,7 @@ public class AdminService extends AbstractService implements RMAdminProtocol {
   }
 
   @Override
-  public void innerInit(Configuration conf) {
+  public void innerInit(Configuration conf) throws Exception {
     masterServiceAddress = conf.getSocketAddr(
         YarnConfiguration.RM_ADMIN_ADDRESS,
         YarnConfiguration.DEFAULT_RM_ADMIN_ADDRESS,
@@ -100,6 +100,7 @@ public class AdminService extends AbstractService implements RMAdminProtocol {
     adminAcl = new AccessControlList(conf.get(
         YarnConfiguration.YARN_ADMIN_ACL,
         YarnConfiguration.DEFAULT_YARN_ADMIN_ACL));
+    super.innerInit(conf);
   }
 
   @Override
@@ -122,6 +123,7 @@ public class AdminService extends AbstractService implements RMAdminProtocol {
     this.server.start();
     conf.updateConnectAddr(YarnConfiguration.RM_ADMIN_ADDRESS,
                            server.getListenerAddress());
+    super.innerStart();
   }
 
   @Override
@@ -129,6 +131,7 @@ public class AdminService extends AbstractService implements RMAdminProtocol {
     if (this.server != null) {
       this.server.stop();
     }
+    super.innerStop();
   }
 
   private UserGroupInformation checkAcls(String method) throws YarnException {

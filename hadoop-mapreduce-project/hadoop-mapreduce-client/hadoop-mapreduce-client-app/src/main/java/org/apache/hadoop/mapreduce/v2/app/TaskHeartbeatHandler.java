@@ -103,7 +103,9 @@ public class TaskHeartbeatHandler extends AbstractService {
   @Override
   protected void innerStop() throws Exception {
     stopped = true;
-    lostTaskCheckerThread.interrupt();
+    if (lostTaskCheckerThread != null) {
+      lostTaskCheckerThread.interrupt();
+    }
     super.innerStop();
   }
 
