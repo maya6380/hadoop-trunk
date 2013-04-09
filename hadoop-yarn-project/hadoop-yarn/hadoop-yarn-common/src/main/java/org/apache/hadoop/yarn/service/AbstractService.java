@@ -317,8 +317,7 @@ public abstract class AbstractService implements Service {
   }
 
   /**
-   * Actions called during the {@link STATE#INITED} to
-   * {@link STATE#STARTED} transition.
+   * Actions called during the INITED to STARTED transition.
    *
    * This method will only ever be called once during the lifecycle of
    * a specific service instance.
@@ -334,7 +333,7 @@ public abstract class AbstractService implements Service {
   }
 
   /**
-   * Actions called to any transition to the {@link STATE#STOPPED} state.
+   * Actions called during the transition to the STOPPED state.
    *
    * This method will only ever be called once during the lifecycle of
    * a specific service instance.
