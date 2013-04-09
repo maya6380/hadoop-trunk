@@ -18,8 +18,10 @@
 
 package org.apache.hadoop.yarn.applications.unmanagedamlauncher;
 
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -54,14 +56,29 @@ public class TestUnmanagedAMLauncher {
           TestUnmanagedAMLauncher.class.getSimpleName(), 1, 1, 1);
       yarnCluster.init(conf);
       yarnCluster.start();
+      //get the address
+      Configuration yarnClusterConfig = yarnCluster.getConfig();
+      LOG.info("MiniYARN ResourceManager published address: " +
+               yarnClusterConfig.get(YarnConfiguration.RM_ADDRESS));
+      LOG.info("MiniYARN ResourceManager published web address: " +
+               yarnClusterConfig.get(YarnConfiguration.RM_WEBAPP_ADDRESS));
+      String webapp = yarnClusterConfig.get(YarnConfiguration.RM_WEBAPP_ADDRESS);
+      assertTrue("Web app address still unbound to a host at " + webapp,
+        !webapp.startsWith("0.0.0.0"));
+      LOG.info("Yarn webapp is at "+ webapp);
       URL url = Thread.currentThread().getContextClassLoader()
           .getResource("yarn-site.xml");
       if (url == null) {
         throw new RuntimeException(
             "Could not find 'yarn-site.xml' dummy file in classpath");
       }
+      //write the document to a buffer (not directly to the file, as that
+      //can cause the file being written to get read -which will then fail.
+      ByteArrayOutputStream out1 = new ByteArrayOutputStream();
+      yarnClusterConfig.writeXml(out1);
+      out1.close();
       OutputStream os = new FileOutputStream(new File(url.getPath()));
-      yarnCluster.getConfig().writeXml(os);
+      os.write(out1.toByteArray());
       os.close();
     }
     try {
