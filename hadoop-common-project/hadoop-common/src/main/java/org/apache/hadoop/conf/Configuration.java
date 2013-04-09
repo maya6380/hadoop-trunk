@@ -2052,7 +2052,7 @@ public class Configuration implements Iterable<Map.Entry<String,String>>,
         // since FileSystem uses Configuration API.  Use java.io.File instead.
         File file = new File(((Path)resource).toUri().getPath())
           .getAbsoluteFile();
-        if (file.exists()) {
+        if (file.exists() && file.length() > 0) {
           if (!quiet) {
             LOG.info("parsing File " + file);
           }

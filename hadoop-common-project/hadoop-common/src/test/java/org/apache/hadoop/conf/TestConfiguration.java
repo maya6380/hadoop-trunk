@@ -1251,6 +1251,21 @@ public class TestConfiguration extends TestCase {
     }
   }
 
+  /**
+   * Verify that adding an empty file does not trigger a failure
+   * @throws Exception on IO problems
+   */
+  public void testParseEmptyFile() throws Exception {
+    File file = new File(CONFIG);
+    out = new BufferedWriter(new FileWriter(file));
+    out.close();
+    assertEquals(0, file.length());
+    Path fileResource = new Path(CONFIG);
+    conf.addResource(fileResource);
+    //as for a key. the value is unimportant, only that an empty is skipped
+    conf.get("key");
+  }
+
   public static void main(String[] argv) throws Exception {
     junit.textui.TestRunner.main(new String[]{
       TestConfiguration.class.getName()
