@@ -180,16 +180,17 @@ public class MiniYARNCluster extends CompositeService {
             YarnConfiguration.YARN_MINICLUSTER_FIXED_PORTS,
             YarnConfiguration.DEFAULT_YARN_MINICLUSTER_FIXED_PORTS)) {
           // pick free random ports.
+          String hostname = MiniYARNCluster.getHostname();
           getConfig().set(YarnConfiguration.RM_ADDRESS,
-              MiniYARNCluster.getHostname() + ":0");
+              hostname + ":0");
           getConfig().set(YarnConfiguration.RM_ADMIN_ADDRESS,
-              MiniYARNCluster.getHostname() + ":0");
+              hostname + ":0");
           getConfig().set(YarnConfiguration.RM_SCHEDULER_ADDRESS,
-              MiniYARNCluster.getHostname() + ":0");
+              hostname + ":0");
           getConfig().set(YarnConfiguration.RM_RESOURCE_TRACKER_ADDRESS,
-              MiniYARNCluster.getHostname() + ":0");
+              hostname + ":0");
           getConfig().set(YarnConfiguration.RM_WEBAPP_ADDRESS,
-              MiniYARNCluster.getHostname() + ":0");
+              hostname + ":0");
         }
         resourceManager = new ResourceManager() {
           @Override
