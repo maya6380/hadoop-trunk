@@ -195,7 +195,7 @@ public class ResourceLocalizationService extends CompositeService
 
   @Override
   public void innerInit (Configuration conf) throws Exception {
-      this.validateConf(conf);
+    this.validateConf(conf);
     this.publicRsrc =
         new LocalResourcesTrackerImpl(null, dispatcher, true, conf);
     this.recordFactory = RecordFactoryProvider.getRecordFactory(conf);
