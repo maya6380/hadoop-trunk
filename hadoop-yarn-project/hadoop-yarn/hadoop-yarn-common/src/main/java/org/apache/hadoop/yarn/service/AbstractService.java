@@ -121,8 +121,21 @@ public abstract class AbstractService implements Service {
     return failureState;
   }
 
+
   /**
-   * {@inheritDoc} 
+   * Set the configuration for this service.
+   * This method is called during {@link #init(Configuration)}
+   * and should only be needed if for some reason a service implementation
+   * needs to override that initial setting -for example replacing
+   * it with a new subclass of {@link Configuration}
+   * @param conf new configuration.
+   */
+  protected void setConfig(Configuration conf) {
+    this.config = conf;
+  }
+
+  /**
+   * {@inheritDoc}
    * This invokes {@link #innerInit} 
    * @param conf the configuration of the service. This must not be null
    * @throws ServiceStateException if the configuration was null,
@@ -137,9 +150,9 @@ public abstract class AbstractService implements Service {
     }
     */
     enterState(STATE.INITED);
-    this.config = conf;
+    setConfig(conf);
     try {
-      innerInit(conf);
+      innerInit(config);
       notifyListeners();
     } catch (Exception e) {
       noteFailure(e);
@@ -212,10 +225,10 @@ public abstract class AbstractService implements Service {
 
   /**
    * Stop a service, logging problems to this
-   * service's log. 
-   * 
+   * service's log.
+   *
    * @param service service to stop -can be null
-   * @see ServiceOperations#stopQuietly(Log, Service) 
+   * @see ServiceOperations#stopQuietly(Log, Service)
    */
   protected void stopQuietly(Service service) {
     ServiceOperations.stopQuietly(LOG, service);
@@ -223,7 +236,7 @@ public abstract class AbstractService implements Service {
 
   /**
    * Stop a service
-   * 
+   *
    * @param service service to stop -can be null
    * @see ServiceOperations#stop(Service) 
    */
@@ -276,10 +289,10 @@ public abstract class AbstractService implements Service {
       return terminationNotification.get();
     }
   }
-  
+
   /* ===================================================================== */
   /* Override Points */
-  /* ======================================================================= */
+  /* ===================================================================== */
 
   /**
    * All initialization code needed by a service.
@@ -290,16 +303,21 @@ public abstract class AbstractService implements Service {
    * Implementations do not need to be synchronized as the logic
    * in {@link #init(Configuration)} prevents re-entrancy.
    *
+   * The base implementation checks to see if the subclass has created
+   * a new configuration instance, and if so, updates the base class value
    * @param conf configuration
    * @throws Exception on a failure -these will be caught,
    * possibly wrapped, and wil; trigger a service stop
    */
   protected void innerInit(Configuration conf) throws Exception {
-
+    if (conf != config) {
+      LOG.debug("Config has been overridden during init");
+      setConfig(conf);
+    }
   }
 
   /**
-   * Actions called during the {@link STATE#INITED} to 
+   * Actions called during the {@link STATE#INITED} to
    * {@link STATE#STARTED} transition.
    *
    * This method will only ever be called once during the lifecycle of
@@ -317,13 +335,13 @@ public abstract class AbstractService implements Service {
 
   /**
    * Actions called to any transition to the {@link STATE#STOPPED} state.
-   * 
+   *
    * This method will only ever be called once during the lifecycle of
    * a specific service instance.
-   * 
+   *
    * Implementations do not need to be synchronized as the logic
    * in {@link #stop()} prevents re-entrancy.
-   * 
+   *
    * Implementations MUST write this to be robust against failures, including 
    * checks for null references -and for the first failure to not stop other
    * attempts to shut down parts of the service.
@@ -419,7 +437,7 @@ public abstract class AbstractService implements Service {
    * and log at the info level.
    * @param newState the proposed new state
    * @return the original state
-   * it wasn't already in that state, and the state model permits state re-entrancy. 
+   * it wasn't already in that state, and the state model permits state re-entrancy.
    */
   private STATE enterState(STATE newState) {
     assert stateModel!=null: "null state in "+name + " " + this.getClass();
@@ -431,12 +449,6 @@ public abstract class AbstractService implements Service {
     return original;
   }
 
-  /**
-   * Query to see if the service is in a specific state. 
-   * In a multi-threaded system, the state may not hold for very long.
-   * @param expected the expected state
-   * @return true if, at the time of invocation, the service was in that state.
-   */
   @Override
   public final boolean inState(Service.STATE expected) {
     return stateModel.inState(expected);
@@ -446,7 +458,6 @@ public abstract class AbstractService implements Service {
   public String toString() {
     return "Service " + name + " in state " + stateModel;
   }
-  
 
   /**
    * Put a blocker to the blocker map -replacing any
@@ -470,7 +481,7 @@ public abstract class AbstractService implements Service {
       blockerMap.remove(name);
     }
   }
-  
+
   @Override
   public Map<String, String> getBlockers() {
     synchronized (blockerMap) {
