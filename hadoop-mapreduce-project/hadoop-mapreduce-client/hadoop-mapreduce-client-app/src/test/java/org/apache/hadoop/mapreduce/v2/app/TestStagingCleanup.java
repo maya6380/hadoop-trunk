@@ -240,8 +240,8 @@ import org.junit.Test;
      }
 
      @Override
-     public void start() {
-       super.start();
+     public void innerStart() throws Exception {
+       super.innerStart();
        DefaultMetricsSystem.shutdown();
      }
 
