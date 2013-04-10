@@ -219,7 +219,7 @@ public abstract class AbstractService implements Service {
    * @throws IOException
    */
   @Override
-  public void close() throws IOException {
+  public final void close() throws IOException {
     stop();
   }
 
