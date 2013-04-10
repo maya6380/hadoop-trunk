@@ -110,11 +110,14 @@ Posix filesystem
   
   * A path component is unicode string of 1 or more characters.
   
-  * Path components must not include characters `":"` or `"/"`.
+  * Path components MUST NOT include the characters `":"` or `"/"`.
   
-  * Path components must not be `"."`  or `".."` 
+  * Path components MUST NOT include characters of ASCII/UTF-8 value 0-31 .
   
-  * Azure blob store says that paths SHOULD NOT use a trailing "." as the .NET URI class strips that.
+  * Path components MUST NOT be `"."`  or `".."` 
+  
+  * Azure blob store says that paths SHOULD NOT use a trailing "." (as their
+   .NET URI class strips it).
 
 ### Security Assumptions
 
@@ -148,9 +151,8 @@ to an undefined availability problem"*
   connection request is refused.
 
 ## Core Requirements of a FileSystem
-  
 
-  
+
 ### Atomicity
 
 * Rename of a file MUST be atomic.
@@ -168,12 +170,11 @@ offers such a guarantee -including the local filesystems.
 
 * `mkdir()` SHOULD be atomic.
 
-* `mkdirs()` MAY be atomic. [It is *currently* atomic on HDFS, but this is not the case for most other filesystems -and cannot be guaranteed for future
+* `mkdirs()` MAY be atomic. [It is *currently* atomic on HDFS, but this is not
+the case for most other filesystems -and cannot be guaranteed for future
 versions of HDFS]
 
 * If `append()` is implemented, each individual `append()` operation SHOULD be atomic.
-
-* Only one writer can write to a file (ISSUE: does anything in MR/HBase use this for locks?)
 
 * `FileSystem.listStatus()` does not appear to contain any claims of atomicity,
   though some uses in the MapReduce codebase (such as `FileOutputCommitter`) do
@@ -224,9 +225,8 @@ data  until  it  is  changed  from  a  `create()`,  `append()`,  `rename()`  and
   operation MAY complete successfully. Implementations MAY cause `read()`
   operations to fail with an `IOException` instead.
 
-* If a file is opened for writing while a write operation is in progress, the
-  open operation SHOULD fail. Implementations MAY succeed with the contents
-  being exactly one of the sets of written data.
+* Multiple writers MAY open a file for writing. If this occurs, the outcome
+is undefined
 
 * Undefined: action of `delete()` while a write or append operation is in
   progress
@@ -244,7 +244,8 @@ defined.
 
  1. Max length of a filename (HDFS: 8000)
 
- 1. `MAX_PATH` - the total length of the entire directory tree referencing a file. Blobstores tend to stop at ~1024 characters
+ 1. `MAX_PATH` - the total length of the entire directory tree referencing a
+  file. Blobstores tend to stop at ~1024 characters
 
  1. max depth of a path (HDFS: 1000 directories)
 
@@ -281,14 +282,15 @@ incur a cost that is O(no. of entries). Hadoop 2.x adds iterative listing to
 handle the challenge of listing directories with millions of entries without
 buffering.
 
-1. A `close()` of an `OutputStream` is fast, irrespective of whether or not the file operation has succeeded or not.
+1. A `close()` of an `OutputStream` is fast, irrespective of whether or not
+the file operation has succeeded or not.
 
 ## Operation-specific requirements
 
-This section attempts to define the expected beav
+This section attempts to define the expected behaviors of specific operations
+of the FileSystem implementations
 
 ### `read()` operations
-
 
 * An attempt to open a nonexistent path for reading MUST raise a `FileNotFoundException`.
 * read() operations at the end of the file MUST return -1
@@ -315,12 +317,13 @@ just seek()'d to.
 * This SHOULD return false if the filesystem does not implement multiple-data
   sources for files.
 
-* Irrespective of whether or a `seekToNewSource()` operation succeeds or fails, the stream's `getPos()` value MUST be the value which it was before the seek operation was invoked. Specifically, it is not a `seek()` operation, it is a
-  request to bind to a new location of data in expectation of a read or seek
-  operation fetching the new data.
+* Irrespective of whether or a `seekToNewSource()` operation succeeds or fails,
+the stream's `getPos()` value MUST be the value which it was before the seek
+operation was invoked. Specifically, it is not a `seek()` operation, it is a
+request to bind to a new location of data in expectation of a read or seek
+operation fetching the new data.
 
 ### `rename(src,dest)`
-
 
 * The parent directories of a the destination file/directory MUST exist for
 the rename to succeed.
@@ -438,15 +441,48 @@ directory AND `overwrite==false`
 ### `OutputStream.flush()` for output streams writing to a `FileSystem`
 
 
-* client-side `flush()` SHOULD forward the data to the DFS.
+* Client-side `flush()` SHOULD forward the data to the DFS.
 
-* the DFS MAY flush that data to disk.
+* The DFS MAY flush that data to disk.
 
 ### `OutputStream.close()` for output streams writing to a `FileSystem`
 
 
 Durability: Once a `close()` operation has successfully completed, the data
 MUST be persisted according to the durability guarantees of the filesystem.
+
+### Block Size data
+
+Block-based filesystems have a block size, which is used by higher layers
+in the Hadoop stack -specifically the MapReduce layer-. For that reason,
+even if a filesystem does not have a notion of blocks, it MUST provide
+a blocksize to callers -ideally one large enough to ensure that Map tasks
+are given a large amount of data to work through. 
+
+
+* FileSystem implementations MUST provide a block size of size >1.
+
+* FileSystem implementations SHOULD provide a block size large enough
+for the layers above to perform useful work. 
+
+* Block-based filesystems SHOULD provide the actual size of blocks of files.
+
+* FileSystem implementations MUST return a block size >=1 in response to calls
+of `getDefaultBlockSize()` and `getDefaultBlockSize(Path)`
+block size of size >1.
+
+* FileSystem implementations MUST return a block size >=1 in response to calls
+of `getBlockSize(path)` when `path` references a file. 
+
+* `getBlockSize(path)` SHOULD throw a `FileNotFoundException` if the 
+path does not exist. (ISSUE: SHOULD vs MUST vs MAY?)
+
+* For all `FileStatus fs = getFileStatus(path)` where `path` exists and is a file,
+`fs.getBlockSize()` must return a block size >=1
+
+* The value of `FileSystem.getBlockSize(path)` MUST match the value of
+`getFileStatus(path).getBlockSize()`
+
 
 ## Network Failures
 
