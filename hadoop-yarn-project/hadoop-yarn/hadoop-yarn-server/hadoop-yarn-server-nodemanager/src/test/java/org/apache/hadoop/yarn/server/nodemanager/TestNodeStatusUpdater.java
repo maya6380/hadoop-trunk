@@ -345,6 +345,20 @@ public class TestNodeStatusUpdater {
     private boolean isTriggered() {
       return triggered;
     }
+
+    private long getWaitStartTime() {
+      return waitStartTime;
+    }
+
+    @Override
+    public String toString() {
+      return "MyNodeStatusUpdater4{" +
+             "rmNeverStart=" + rmNeverStart +
+             ", waitStartTime=" + waitStartTime +
+             ", triggered=" + triggered +
+             ", rmStartIntervalMS=" + rmStartIntervalMS +
+             '}';
+    }
   }
 
   private class MyNodeStatusUpdater5 extends NodeStatusUpdaterImpl {
@@ -862,7 +876,7 @@ public class TestNodeStatusUpdater {
       nm.start();
     } catch (Exception ex){
       LOG.error("NM should have started successfully " +
-          "after connecting to RM.",ex);
+                "after connecting to RM.", ex);
       throw ex;
     }
     NodeStatusUpdater updater =
@@ -872,11 +886,14 @@ public class TestNodeStatusUpdater {
     Assert.assertTrue("NM started before updater triggered",
                       myUpdater.isTriggered());
     Assert.assertTrue("NM should have connected to RM after "
-        +" the start interval of " + rmStartIntervalMS +": actual " + duration,
+        +"the start interval of " + rmStartIntervalMS
+        +": actual " + duration
+        + " " + myUpdater,
         (duration >= rmStartIntervalMS));
     Assert.assertTrue("NM should have connected to RM less than "
         + (rmStartIntervalMS + delta)
-        +" milliseconds of RM starting up: actual " + duration,
+        +" milliseconds of RM starting up: actual " + duration
+        + " " + myUpdater,
         (duration < (rmStartIntervalMS + delta)));
   }
 
