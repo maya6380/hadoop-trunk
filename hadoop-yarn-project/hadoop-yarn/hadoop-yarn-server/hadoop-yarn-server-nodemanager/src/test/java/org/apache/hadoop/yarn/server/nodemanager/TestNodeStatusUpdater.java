@@ -835,10 +835,13 @@ public class TestNodeStatusUpdater {
           "after connecting to RM.");
     }
     long duration = System.currentTimeMillis() - waitStartTime;
-    Assert.assertTrue("NM should have connected to RM within " + delta
+    Assert.assertTrue("NM should have connected to RM within "
+        +" the start interval of " + rmStartIntervalMS +": actual " + duration,
+        (duration >= rmStartIntervalMS));
+    Assert.assertTrue("NM should have connected to RM less than "
+        + (rmStartIntervalMS + delta)
         +" milliseconds of RM starting up: actual " + duration,
-        (duration >= rmStartIntervalMS)
-        && (duration < (rmStartIntervalMS+delta)));
+        (duration < (rmStartIntervalMS+delta)));
   }
 
   /**
