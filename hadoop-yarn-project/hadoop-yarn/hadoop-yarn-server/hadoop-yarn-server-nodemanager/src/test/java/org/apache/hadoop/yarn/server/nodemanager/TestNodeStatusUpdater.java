@@ -318,6 +318,7 @@ public class TestNodeStatusUpdater {
     private final long waitStartTime;
     private final long rmStartIntervalMS;
     private final boolean rmNeverStart;
+    private boolean triggered = false;
 
     public MyNodeStatusUpdater4(Context context, Dispatcher dispatcher,
         NodeHealthCheckerService healthChecker, NodeManagerMetrics metrics,
@@ -336,8 +337,13 @@ public class TestNodeStatusUpdater {
         throw new YarnRuntimeException("Faking RM start failure as start " +
             "delay timer has not expired.");
       } else {
+        triggered = true;
         return resourceTracker;
       }
+    }
+
+    private boolean isTriggered() {
+      return triggered;
     }
   }
 
@@ -747,12 +753,36 @@ public class TestNodeStatusUpdater {
     Assert.assertEquals(STATE.STOPPED, nm.getServiceState());
   }
 
+  
+  private abstract class NodeManagerWithCustomNodeStatusUpdater extends NodeManager {
+    private NodeStatusUpdater updater;
+
+    private NodeManagerWithCustomNodeStatusUpdater() {
+    }
+
+    @Override
+    protected NodeStatusUpdater createNodeStatusUpdater(Context context,
+                                                        Dispatcher dispatcher,
+                                                        NodeHealthCheckerService healthChecker) {
+      updater = createUpdater(context, dispatcher, healthChecker);
+      return updater;
+    }
+
+    public NodeStatusUpdater getUpdater() {
+      return updater;
+    }
+
+    abstract NodeStatusUpdater createUpdater(Context context,
+                                                       Dispatcher dispatcher,
+                                                       NodeHealthCheckerService healthChecker);
+  }
+  
   @Test
   public void testNMShutdownForRegistrationFailure() throws Exception {
 
-    nm = new NodeManager() {
+    nm = new NodeManagerWithCustomNodeStatusUpdater() {
       @Override
-      protected NodeStatusUpdater createNodeStatusUpdater(Context context,
+      protected NodeStatusUpdater createUpdater(Context context,
           Dispatcher dispatcher, NodeHealthCheckerService healthChecker) {
         MyNodeStatusUpdater nodeStatusUpdater = new MyNodeStatusUpdater(
             context, dispatcher, healthChecker, metrics);
@@ -784,9 +814,9 @@ public class TestNodeStatusUpdater {
         connectionRetryIntervalSecs);
 
     //Test NM try to connect to RM Several times, but finally fail
-    nm = new NodeManager() {
+    nm = new NodeManagerWithCustomNodeStatusUpdater() {
       @Override
-      protected NodeStatusUpdater createNodeStatusUpdater(Context context,
+      protected NodeStatusUpdater createUpdater(Context context,
           Dispatcher dispatcher, NodeHealthCheckerService healthChecker) {
         NodeStatusUpdater nodeStatusUpdater = new MyNodeStatusUpdater4(
             context, dispatcher, healthChecker, metrics,
@@ -801,8 +831,9 @@ public class TestNodeStatusUpdater {
       Assert.fail("NM should have failed to start due to RM connect failure");
     } catch(Exception e) {
       long t = System.currentTimeMillis();
-      boolean waitTimeValid = (t - waitStartTime >= connectionWaitSecs * 1000)
-              && (t - waitStartTime < (connectionWaitSecs * 1000 + delta));
+      long duration = t - waitStartTime;
+      boolean waitTimeValid = (duration >= connectionWaitSecs * 1000)
+              && (duration < (connectionWaitSecs * 1000 + delta));
       if(!waitTimeValid) {
         //either the exception was too early, or it had a different cause.
         //reject with the inner stack trace
@@ -815,9 +846,9 @@ public class TestNodeStatusUpdater {
 
     //Test NM connect to RM, fail at first several attempts,
     //but finally success.
-    nm = new NodeManager() {
+    nm = new NodeManagerWithCustomNodeStatusUpdater() {
       @Override
-      protected NodeStatusUpdater createNodeStatusUpdater(Context context,
+      protected NodeStatusUpdater createUpdater(Context context,
           Dispatcher dispatcher, NodeHealthCheckerService healthChecker) {
         NodeStatusUpdater nodeStatusUpdater = new MyNodeStatusUpdater4(
             context, dispatcher, healthChecker, metrics, rmStartIntervalMS,
@@ -825,23 +856,28 @@ public class TestNodeStatusUpdater {
         return nodeStatusUpdater;
       }
     };
-
     nm.init(conf);
     waitStartTime = System.currentTimeMillis();
     try {
       nm.start();
     } catch (Exception ex){
-      Assert.fail("NM should have started successfully " +
-          "after connecting to RM.");
+      LOG.error("NM should have started successfully " +
+          "after connecting to RM.",ex);
+      throw ex;
     }
+    NodeStatusUpdater updater =
+      ((NodeManagerWithCustomNodeStatusUpdater) nm).getUpdater();
+    MyNodeStatusUpdater4 myUpdater = (MyNodeStatusUpdater4) updater;
     long duration = System.currentTimeMillis() - waitStartTime;
-    Assert.assertTrue("NM should have connected to RM within "
+    Assert.assertTrue("NM started before updater triggered",
+                      myUpdater.isTriggered());
+    Assert.assertTrue("NM should have connected to RM after "
         +" the start interval of " + rmStartIntervalMS +": actual " + duration,
         (duration >= rmStartIntervalMS));
     Assert.assertTrue("NM should have connected to RM less than "
         + (rmStartIntervalMS + delta)
         +" milliseconds of RM starting up: actual " + duration,
-        (duration < (rmStartIntervalMS+delta)));
+        (duration < (rmStartIntervalMS + delta)));
   }
 
   /**
