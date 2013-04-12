@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.logging.Log;
@@ -391,7 +392,7 @@ public class TestNodeStatusUpdater {
     protected void innerStop() throws Exception {
       super.innerStop();
       isStopped = true;
-        syncBarrier.await();
+      syncBarrier.await(10000, TimeUnit.MILLISECONDS);
     }
   }
   // 
@@ -575,7 +576,9 @@ public class TestNodeStatusUpdater {
       nodeStatus.setResponseId(heartBeatID);
       NodeHeartbeatResponse nhResponse =
           YarnServerBuilderUtils.newNodeHeartbeatResponse(heartBeatID,
-              heartBeatNodeAction, null, null, null, 1000L);
+                                                          heartBeatNodeAction,
+                                                          null, null, null,
+                                                          1000L);
       return nhResponse;
     }
   }
@@ -745,7 +748,7 @@ public class TestNodeStatusUpdater {
   }
 
   @Test
-  public void testNMShutdownForRegistrationFailure() {
+  public void testNMShutdownForRegistrationFailure() throws Exception {
 
     nm = new NodeManager() {
       @Override
@@ -767,7 +770,7 @@ public class TestNodeStatusUpdater {
   }
 
   @Test (timeout = 150000)
-  public void testNMConnectionToRM() {
+  public void testNMConnectionToRM() throws Exception {
     final long delta = 50000;
     final long connectionWaitSecs = 5;
     final long connectionRetryIntervalSecs = 1;
@@ -797,12 +800,17 @@ public class TestNodeStatusUpdater {
       nm.start();
       Assert.fail("NM should have failed to start due to RM connect failure");
     } catch(Exception e) {
-      Assert.assertTrue("NM should have tried re-connecting to RM during " +
+      long t = System.currentTimeMillis();
+      boolean waitTimeValid = (t - waitStartTime >= connectionWaitSecs * 1000)
+              && (t - waitStartTime < (connectionWaitSecs * 1000 + delta));
+      if(!waitTimeValid) {
+        //either the exception was too early, or it had a different cause.
+        //reject with the inner stack trace
+        throw new Exception("NM should have tried re-connecting to RM during " +
           "period of at least " + connectionWaitSecs + " seconds, but " +
           "stopped retrying within " + (connectionWaitSecs + delta/1000) +
-          " seconds", (System.currentTimeMillis() - waitStartTime
-              >= connectionWaitSecs*1000) && (System.currentTimeMillis()
-              - waitStartTime < (connectionWaitSecs*1000+delta)));
+          " seconds: " + e, e);
+      }
     }
 
     //Test NM connect to RM, fail at first several attempts,
@@ -820,12 +828,7 @@ public class TestNodeStatusUpdater {
 
     nm.init(conf);
     waitStartTime = System.currentTimeMillis();
-    try {
-      nm.start();
-    } catch (Exception ex){
-      Assert.fail("NM should have started successfully " +
-          "after connecting to RM.");
-    }
+    nm.start();
     Assert.assertTrue("NM should have connected to RM within " + delta/1000
         +" seconds of RM starting up.",
         (System.currentTimeMillis() - waitStartTime >= rmStartIntervalMS)
@@ -841,7 +844,7 @@ public class TestNodeStatusUpdater {
    * only after NM_EXPIRY interval. See MAPREDUCE-2749.
    */
   @Test
-  public void testNoRegistrationWhenNMServicesFail() {
+  public void testNoRegistrationWhenNMServicesFail() throws Exception {
 
     nm = new NodeManager() {
       @Override
@@ -956,7 +959,7 @@ public class TestNodeStatusUpdater {
     nm.init(conf);
     nm.start();
     try {
-      syncBarrier.await();
+      syncBarrier.await(10000, TimeUnit.MILLISECONDS);
     } catch (Exception e) {
     }
     Assert.assertTrue(((MyNodeManager2) nm).isStopped);
@@ -1048,16 +1051,16 @@ public class TestNodeStatusUpdater {
     }
   }
 
-  private void verifyNodeStartFailure(String errMessage) {
+  private void verifyNodeStartFailure(String errMessage) throws Exception {
     YarnConfiguration conf = createNMConfig();
     nm.init(conf);
     try {
       nm.start();
       Assert.fail("NM should have failed to start. Didn't get exception!!");
     } catch (Exception e) {
-      Assert.assertTrue(
-        "Did not find " + errMessage + " in " + e.getMessage(),
-        e.getMessage().contains(errMessage));
+      if(!e.getMessage().contains(errMessage)) {
+        throw e;
+      }
     }
     
     // the service should be stopped
