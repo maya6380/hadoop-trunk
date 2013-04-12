@@ -41,13 +41,13 @@ public class TestCompositeService {
   private static final Log LOG  = LogFactory.getLog(TestCompositeService.class);
 
   /**
-   * flag to state policy of CompositeService, and hence 
+   * flag to state policy of CompositeService, and hence
    * what to look for after trying to stop a service from another state
    * (e.g inited)
    */
   private static final boolean STOP_ONLY_STARTED_SERVICES =
     CompositeServiceImpl.isPolicyToStopOnlyStartedServices();
-  
+
   @Before
   public void setup() {
     CompositeServiceImpl.resetCounter();

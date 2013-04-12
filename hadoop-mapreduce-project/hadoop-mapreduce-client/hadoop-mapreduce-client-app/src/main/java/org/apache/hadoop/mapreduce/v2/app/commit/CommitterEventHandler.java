@@ -108,7 +108,7 @@ public class CommitterEventHandler extends AbstractService
   }
 
   @Override
-  protected void innerStart() throws Exception {    
+  protected void innerStart() throws Exception {
     ThreadFactory tf = new ThreadFactoryBuilder()
       .setNameFormat("CommitterEvent Processor #%d")
       .build();

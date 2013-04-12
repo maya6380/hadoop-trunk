@@ -88,8 +88,9 @@ public class CompositeService extends AbstractService {
    * Stop the services in reverse order
    *
    * @param numOfServicesStarted index from where the stop should work
-   * @param stopOnlyStartedServices
-   * @throws RuntimeException the first exception raised during the 
+   * @param stopOnlyStartedServices flag to say "only start services that are
+   * started, not those that are NOTINITED or INITED.
+   * @throws RuntimeException the first exception raised during the
    * stop process -<i>after all services are stopped</i>
    */
   private synchronized void stop(int numOfServicesStarted,

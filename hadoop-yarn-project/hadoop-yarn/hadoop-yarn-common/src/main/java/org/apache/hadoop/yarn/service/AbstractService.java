@@ -136,7 +136,7 @@ public abstract class AbstractService implements Service {
 
   /**
    * {@inheritDoc}
-   * This invokes {@link #innerInit} 
+   * This invokes {@link #innerInit}
    * @param conf the configuration of the service. This must not be null
    * @throws ServiceStateException if the configuration was null,
    * the state change not permitted, or something else went wrong
@@ -341,10 +341,10 @@ public abstract class AbstractService implements Service {
    * Implementations do not need to be synchronized as the logic
    * in {@link #stop()} prevents re-entrancy.
    *
-   * Implementations MUST write this to be robust against failures, including 
+   * Implementations MUST write this to be robust against failures, including
    * checks for null references -and for the first failure to not stop other
    * attempts to shut down parts of the service.
-   * 
+   *
    * @throws Exception if needed -these will be caught and logged.
    */
   protected void innerStop() throws Exception {

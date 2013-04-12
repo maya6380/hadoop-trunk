@@ -144,7 +144,7 @@ public class TestGlobalStateChangeListener extends ServiceAssert {
     //still should record its invocation
     assertListenerState(listener, Service.STATE.INITED);
     assertListenerEventCount(listener, 1);
-    
+
     //and second listener didn't get notified of anything
     assertListenerEventCount(l2, 0);
 

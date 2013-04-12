@@ -754,7 +754,7 @@ public class TestNodeStatusUpdater {
     Assert.assertEquals(STATE.STOPPED, nm.getServiceState());
     Assert.assertEquals(numCleanups.get(), 1);
   }
-  
+
   @Test
   public void testNodeDecommision() throws Exception {
     nm = getNodeManager(NodeAction.SHUTDOWN);
@@ -779,7 +779,6 @@ public class TestNodeStatusUpdater {
     Assert.assertEquals(STATE.STOPPED, nm.getServiceState());
   }
 
-  
   private abstract class NodeManagerWithCustomNodeStatusUpdater extends NodeManager {
     private NodeStatusUpdater updater;
 
@@ -841,7 +840,6 @@ public class TestNodeStatusUpdater {
 
     //Test NM try to connect to RM Several times, but finally fail
     NodeManagerWithCustomNodeStatusUpdater nmWithUpdater;
-    
     nm = nmWithUpdater = new NodeManagerWithCustomNodeStatusUpdater() {
       @Override
       protected NodeStatusUpdater createUpdater(Context context,

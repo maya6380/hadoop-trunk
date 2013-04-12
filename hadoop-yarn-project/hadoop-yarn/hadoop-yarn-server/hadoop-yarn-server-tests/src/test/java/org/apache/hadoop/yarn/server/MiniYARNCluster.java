@@ -256,10 +256,10 @@ public class MiniYARNCluster extends CompositeService {
       index = i;
     }
 
-    public synchronized void innerInit(Configuration conf) throws Exception {                          
-      Configuration config = new YarnConfiguration(conf);                            
-      super.innerInit(config);                                                        
-    }                                                                            
+    public synchronized void innerInit(Configuration conf) throws Exception {
+      Configuration config = new YarnConfiguration(conf);
+      super.innerInit(config);
+    }
 
     /**
      * Create local/log directories
