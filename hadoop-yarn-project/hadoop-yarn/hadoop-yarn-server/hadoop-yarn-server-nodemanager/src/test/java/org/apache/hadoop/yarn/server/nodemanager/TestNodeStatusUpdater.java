@@ -319,6 +319,7 @@ public class TestNodeStatusUpdater {
     private final long rmStartIntervalMS;
     private final boolean rmNeverStart;
     private boolean triggered = false;
+    private long durationWhenTriggered = -1;
 
     public MyNodeStatusUpdater4(Context context, Dispatcher dispatcher,
         NodeHealthCheckerService healthChecker, NodeManagerMetrics metrics,
@@ -332,12 +333,19 @@ public class TestNodeStatusUpdater {
 
     @Override
     protected ResourceTracker getRMClient() {
-      if(System.currentTimeMillis() - waitStartTime <= rmStartIntervalMS
+      if(triggered) {
+        return resourceTracker;
+      }
+      long t = System.currentTimeMillis();
+      long duration = t - waitStartTime;
+      if(duration <= rmStartIntervalMS
           || rmNeverStart) {
         throw new YarnRuntimeException("Faking RM start failure as start " +
             "delay timer has not expired.");
       } else {
+        //triggering
         triggered = true;
+        durationWhenTriggered = duration;
         return resourceTracker;
       }
     }
@@ -350,12 +358,16 @@ public class TestNodeStatusUpdater {
       return waitStartTime;
     }
 
+    private long getDurationWhenTriggered() {
+      return durationWhenTriggered;
+    }
+
     @Override
     public String toString() {
       return "MyNodeStatusUpdater4{" +
              "rmNeverStart=" + rmNeverStart +
-             ", waitStartTime=" + waitStartTime +
              ", triggered=" + triggered +
+             ", duration=" + durationWhenTriggered +
              ", rmStartIntervalMS=" + rmStartIntervalMS +
              '}';
     }
