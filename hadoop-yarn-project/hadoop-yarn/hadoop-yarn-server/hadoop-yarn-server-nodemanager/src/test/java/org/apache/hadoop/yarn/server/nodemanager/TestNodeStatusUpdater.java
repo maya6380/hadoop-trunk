@@ -828,12 +828,17 @@ public class TestNodeStatusUpdater {
 
     nm.init(conf);
     waitStartTime = System.currentTimeMillis();
-    nm.start();
-    Assert.assertTrue("NM should have connected to RM within " + delta/1000
-        +" seconds of RM starting up.",
-        (System.currentTimeMillis() - waitStartTime >= rmStartIntervalMS)
-        && (System.currentTimeMillis() - waitStartTime
-        < (rmStartIntervalMS+delta)));
+    try {
+      nm.start();
+    } catch (Exception ex){
+      Assert.fail("NM should have started successfully " +
+          "after connecting to RM.");
+    }
+    long duration = System.currentTimeMillis() - waitStartTime;
+    Assert.assertTrue("NM should have connected to RM within " + delta
+        +" milliseconds of RM starting up: actual " + duration,
+        (duration >= rmStartIntervalMS)
+        && (duration < (rmStartIntervalMS+delta)));
   }
 
   /**
@@ -1058,6 +1063,10 @@ public class TestNodeStatusUpdater {
       nm.start();
       Assert.fail("NM should have failed to start. Didn't get exception!!");
     } catch (Exception e) {
+      //the version in trunk looked in the cause for equality
+      // and assumed failures were nested.
+      //this version assumes that error strings propagate to the base and
+      //use a contains() test only. It should be less brittle
       if(!e.getMessage().contains(errMessage)) {
         throw e;
       }
