@@ -30,7 +30,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileContext;
 import org.apache.hadoop.fs.UnsupportedFileSystemException;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
-import org.apache.hadoop.yarn.server.nodemanager.ContainerExecutor;
 import org.apache.hadoop.yarn.service.AbstractService;
 
 import org.apache.commons.logging.Log;
@@ -75,7 +74,7 @@ public class DeletionService extends AbstractService {
   }
 
   @Override
-  protected void innerInit(Configuration conf) throws Exception {
+  protected void serviceInit(Configuration conf) throws Exception {
     ThreadFactory tf = new ThreadFactoryBuilder()
       .setNameFormat("DeletionService #%d")
       .build();
@@ -90,11 +89,11 @@ public class DeletionService extends AbstractService {
     }
     sched.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
     sched.setKeepAliveTime(60L, SECONDS);
-    super.innerInit(conf);
+    super.serviceInit(conf);
   }
 
   @Override
-  protected void innerStop() throws Exception {
+  protected void serviceStop() throws Exception {
     if (sched != null) {
       sched.shutdown();
       boolean terminated = false;
@@ -106,7 +105,7 @@ public class DeletionService extends AbstractService {
         sched.shutdownNow();
       }
     }
-    super.innerStop();
+    super.serviceStop();
   }
 
   /**

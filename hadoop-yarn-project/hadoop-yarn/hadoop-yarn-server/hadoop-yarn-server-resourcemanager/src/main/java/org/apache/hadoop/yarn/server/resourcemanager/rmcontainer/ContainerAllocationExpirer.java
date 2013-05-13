@@ -38,13 +38,13 @@ public class ContainerAllocationExpirer extends
     this.dispatcher = d.getEventHandler();
   }
 
-  public void innerInit(Configuration conf) throws Exception {
+  public void serviceInit(Configuration conf) throws Exception {
     int expireIntvl = conf.getInt(
             YarnConfiguration.RM_CONTAINER_ALLOC_EXPIRY_INTERVAL_MS,
             YarnConfiguration.DEFAULT_RM_CONTAINER_ALLOC_EXPIRY_INTERVAL_MS);
     setExpireInterval(expireIntvl);
     setMonitorInterval(expireIntvl/3);
-    super.innerInit(conf);
+    super.serviceInit(conf);
   }
 
   @Override

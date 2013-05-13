@@ -115,7 +115,7 @@ public class JobHistoryEventHandler extends AbstractService
    * Creates these directories if they do not already exist.
    */
   @Override
-  protected void innerInit(Configuration conf) throws Exception {
+  protected void serviceInit(Configuration conf) throws Exception {
     String jobId =
       TypeConverter.fromYarn(context.getApplicationID()).toString();
     
@@ -220,7 +220,7 @@ public class JobHistoryEventHandler extends AbstractService
             MRJobConfig.MR_AM_HISTORY_USE_BATCHED_FLUSH_QUEUE_SIZE_THRESHOLD,
             MRJobConfig.DEFAULT_MR_AM_HISTORY_USE_BATCHED_FLUSH_QUEUE_SIZE_THRESHOLD);
     
-    super.innerInit(conf);
+    super.serviceInit(conf);
   }
 
   private void mkdir(FileSystem fs, Path path, FsPermission fsp)
@@ -243,7 +243,7 @@ public class JobHistoryEventHandler extends AbstractService
   }
 
   @Override
-  protected void innerStart() throws Exception {
+  protected void serviceStart() throws Exception {
     eventHandlingThread = new Thread(new Runnable() {
       @Override
       public void run() {
@@ -282,11 +282,11 @@ public class JobHistoryEventHandler extends AbstractService
       }
     });
     eventHandlingThread.start();
-    super.innerStart();
+    super.serviceStart();
   }
 
   @Override
-  protected void innerStop() throws Exception {
+  protected void serviceStop() throws Exception {
     LOG.info("Stopping JobHistoryEventHandler. "
         + "Size of the outstanding queue size is " + eventQueue.size());
     stopped = true;
@@ -354,7 +354,7 @@ public class JobHistoryEventHandler extends AbstractService
       }
     }
     LOG.info("Stopped JobHistoryEventHandler. super.stop()");
-    super.innerStop();
+    super.serviceStop();
   }
 
   protected EventWriter createEventWriter(Path historyFilePath)

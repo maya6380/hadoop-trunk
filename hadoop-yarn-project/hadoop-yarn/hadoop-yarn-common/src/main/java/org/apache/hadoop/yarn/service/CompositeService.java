@@ -62,26 +62,26 @@ public class CompositeService extends AbstractService {
     return serviceList.remove(service);
   }
 
-  protected void innerInit(Configuration conf) throws Exception {
+  protected void serviceInit(Configuration conf) throws Exception {
     for (Service service : serviceList) {
       service.init(conf);
     }
-    super.innerInit(conf);
+    super.serviceInit(conf);
   }
 
-  protected void innerStart() throws Exception {
+  protected void serviceStart() throws Exception {
     for (Service service : serviceList) {
       // start the service. If this fails that service
       // will be stopped and an exception raised
       service.start();
     }
-    super.innerStart();
+    super.serviceStart();
   }
 
-  protected void innerStop() throws Exception{
-    //stop all services in reverse order
+  protected void serviceStop() throws Exception{
+    //stop all services that were started
     stop(serviceList.size(), STOP_ONLY_STARTED_SERVICES);
-    super.innerStop();
+    super.serviceStop();
   }
 
   /**
@@ -95,7 +95,7 @@ public class CompositeService extends AbstractService {
    */
   private synchronized void stop(int numOfServicesStarted,
                                  boolean stopOnlyStartedServices) {
-    // stop in reserve order of start
+    // stop in reverse order of start
     Exception firstException = null;
     for (int i = numOfServicesStarted - 1; i >= 0; i--) {
       Service service = serviceList.get(i);

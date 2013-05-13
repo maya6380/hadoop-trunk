@@ -196,7 +196,7 @@ public class TestServiceLifecycle extends ServiceAssert {
   @Test
   public void testStopFailingInitAndStop() throws Throwable {
     BreakableService svc = new BreakableService(true, false, true);
-    svc.register(new LoggingStateChangeListener());
+    svc.registerServiceListener(new LoggingStateChangeListener());
     try {
       svc.init(new Configuration());
       fail("Expected a failure, got " + svc);
@@ -230,7 +230,7 @@ public class TestServiceLifecycle extends ServiceAssert {
   public void testServiceNotifications() throws Throwable {
     BreakableService svc = new BreakableService(false, false, false);
     BreakableStateChangeListener listener = new BreakableStateChangeListener();
-    svc.register(listener);
+    svc.registerServiceListener(listener);
     svc.init(new Configuration());
     assertEquals(1, listener.getEventCount());
     svc.start();
@@ -246,7 +246,7 @@ public class TestServiceLifecycle extends ServiceAssert {
     BreakableService svc = new BreakableService(false, false, false);
     BreakableStateChangeListener listener = new BreakableStateChangeListener();
     listener.setFailingState(Service.STATE.STARTED);
-    svc.register(listener);
+    svc.registerServiceListener(listener);
     svc.init(new Configuration());
     assertEquals(1, listener.getEventCount());
     //start this; the listener failed but this won't show

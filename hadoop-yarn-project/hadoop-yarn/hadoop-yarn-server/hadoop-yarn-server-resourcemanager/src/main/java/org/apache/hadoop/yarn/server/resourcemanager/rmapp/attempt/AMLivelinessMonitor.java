@@ -35,8 +35,8 @@ public class AMLivelinessMonitor extends AbstractLivelinessMonitor<ApplicationAt
     this.dispatcher = d.getEventHandler();
   }
 
-  public void innerInit(Configuration conf) throws Exception {
-    super.innerInit(conf);
+  public void serviceInit(Configuration conf) throws Exception {
+    super.serviceInit(conf);
     int expireIntvl = conf.getInt(YarnConfiguration.RM_AM_EXPIRY_INTERVAL_MS,
             YarnConfiguration.DEFAULT_RM_AM_EXPIRY_INTERVAL_MS);
     setExpireInterval(expireIntvl);

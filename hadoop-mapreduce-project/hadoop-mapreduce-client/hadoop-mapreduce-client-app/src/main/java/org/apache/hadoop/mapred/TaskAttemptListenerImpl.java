@@ -95,17 +95,17 @@ public class TaskAttemptListenerImpl extends CompositeService
   }
 
   @Override
-  protected void innerInit(Configuration conf) throws Exception {
+  protected void serviceInit(Configuration conf) throws Exception {
    registerHeartbeatHandler(conf);
    commitWindowMs = conf.getLong(MRJobConfig.MR_AM_COMMIT_WINDOW_MS,
        MRJobConfig.DEFAULT_MR_AM_COMMIT_WINDOW_MS);
-   super.innerInit(conf);
+   super.serviceInit(conf);
   }
 
   @Override
-  protected void innerStart() throws Exception {
+  protected void serviceStart() throws Exception {
     startRpcServer();
-    super.innerStart();
+    super.serviceStart();
   }
 
   protected void registerHeartbeatHandler(Configuration conf) {
@@ -144,9 +144,9 @@ public class TaskAttemptListenerImpl extends CompositeService
   }
 
   @Override
-  protected void innerStop() throws Exception {
+  protected void serviceStop() throws Exception {
     stopRpcServer();
-    super.innerStop();
+    super.serviceStop();
   }
 
   protected void stopRpcServer() {

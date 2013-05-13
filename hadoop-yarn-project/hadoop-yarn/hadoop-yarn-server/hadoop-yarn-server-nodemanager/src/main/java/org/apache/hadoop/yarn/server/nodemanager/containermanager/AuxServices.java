@@ -30,7 +30,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
-import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.event.EventHandler;
 import org.apache.hadoop.yarn.service.AbstractService;
@@ -82,7 +81,7 @@ public class AuxServices extends AbstractService
   }
 
   @Override
-  public void innerInit(Configuration conf) throws Exception {
+  public void serviceInit(Configuration conf) throws Exception {
     Collection<String> auxNames = conf.getStringCollection(
         YarnConfiguration.NM_AUX_SERVICES);
     for (final String sName : auxNames) {
@@ -110,33 +109,33 @@ public class AuxServices extends AbstractService
         throw e;
       }
     }
-    super.innerInit(conf);
+    super.serviceInit(conf);
   }
 
   @Override
-  public void innerStart() throws Exception {
+  public void serviceStart() throws Exception {
     // TODO fork(?) services running as configured user
     //      monitor for health, shutdown/restart(?) if any should die
     for (Map.Entry<String, AuxiliaryService> entry : serviceMap.entrySet()) {
       AuxiliaryService service = entry.getValue();
       String name = entry.getKey();
       service.start();
-      service.register(this);
+      service.registerServiceListener(this);
       ByteBuffer meta = service.getMeta();
       if(meta != null) {
         serviceMeta.put(name, meta);
       }
     }
-    super.innerStart();
+    super.serviceStart();
   }
 
   @Override
-  public void innerStop() throws Exception {
+  public void serviceStop() throws Exception {
     try {
       synchronized (serviceMap) {
         for (Service service : serviceMap.values()) {
           if (service.getServiceState() == Service.STATE.STARTED) {
-            service.unregister(this);
+            service.unregisterServiceListener(this);
             service.stop();
           }
         }
@@ -144,7 +143,7 @@ public class AuxServices extends AbstractService
         serviceMeta.clear();
       }
     } finally {
-      super.innerStop();
+      super.serviceStop();
     }
   }
 

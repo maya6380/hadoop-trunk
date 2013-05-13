@@ -200,7 +200,7 @@ public class TestYARNRunner extends TestCase {
     final ClientRMProtocol clientRMProtocol = mock(ClientRMProtocol.class);
     ResourceMgrDelegate delegate = new ResourceMgrDelegate(conf) {
       @Override
-      protected void innerStart() {
+      protected void serviceStart() {
         this.rmClient = clientRMProtocol;
       }
     };

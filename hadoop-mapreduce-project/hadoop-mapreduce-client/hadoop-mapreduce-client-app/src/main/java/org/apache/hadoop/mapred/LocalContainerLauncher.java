@@ -18,10 +18,8 @@
 
 package org.apache.hadoop.mapred;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.util.HashSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -113,17 +111,17 @@ public class LocalContainerLauncher extends AbstractService implements
     // after running (e.g., "localizeForTask()" or "localizeForMapTask()").
   }
 
-  public void innerStart() throws Exception {
+  public void serviceStart() throws Exception {
     eventHandlingThread = new Thread(new SubtaskRunner(), "uber-SubtaskRunner");
     eventHandlingThread.start();
-    super.innerStart();
+    super.serviceStart();
   }
 
-  public void innerStop() throws Exception {
+  public void serviceStop() throws Exception {
     if (eventHandlingThread != null) {
       eventHandlingThread.interrupt();
     }
-    super.innerStop();
+    super.serviceStop();
   }
 
   @Override

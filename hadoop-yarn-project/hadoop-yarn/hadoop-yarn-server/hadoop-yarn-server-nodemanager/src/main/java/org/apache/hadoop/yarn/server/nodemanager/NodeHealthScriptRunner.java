@@ -197,7 +197,7 @@ public class NodeHealthScriptRunner extends AbstractService {
    * Method which initializes the values for the script path and interval time.
    */
   @Override
-  protected void innerInit(Configuration conf) throws Exception {
+  protected void serviceInit(Configuration conf) throws Exception {
     this.conf = conf;
     this.nodeHealthScript = 
         conf.get(YarnConfiguration.NM_HEALTH_CHECK_SCRIPT_PATH);
@@ -209,7 +209,7 @@ public class NodeHealthScriptRunner extends AbstractService {
     String[] args = conf.getStrings(YarnConfiguration.NM_HEALTH_CHECK_SCRIPT_OPTS,
         new String[] {});
     timer = new NodeHealthMonitorExecutor(args);
-    super.innerInit(conf);
+    super.serviceInit(conf);
   }
 
   /**
@@ -217,7 +217,7 @@ public class NodeHealthScriptRunner extends AbstractService {
    * 
    */
   @Override
-  protected void innerStart() throws Exception {
+  protected void serviceStart() throws Exception {
     // if health script path is not configured don't start the thread.
     if (!shouldRun(conf)) {
       LOG.info("Not starting node health monitor");
@@ -227,7 +227,7 @@ public class NodeHealthScriptRunner extends AbstractService {
     // Start the timer task immediately and
     // then periodically at interval time.
     nodeHealthScriptScheduler.scheduleAtFixedRate(timer, 0, intervalTime);
-    super.innerStart();
+    super.serviceStart();
   }
 
   /**
@@ -235,7 +235,7 @@ public class NodeHealthScriptRunner extends AbstractService {
    * 
    */
   @Override
-  protected void innerStop() {
+  protected void serviceStop() {
     if (!shouldRun(conf)) {
       return;
     }

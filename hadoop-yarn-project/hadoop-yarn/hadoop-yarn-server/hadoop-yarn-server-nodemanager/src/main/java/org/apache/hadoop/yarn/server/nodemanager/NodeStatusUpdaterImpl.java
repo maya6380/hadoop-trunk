@@ -110,7 +110,7 @@ public class NodeStatusUpdaterImpl extends AbstractService implements
   }
 
   @Override
-  protected void innerInit(Configuration conf) throws Exception {
+  protected void serviceInit(Configuration conf) throws Exception {
     this.rmAddress = conf.getSocketAddr(
         YarnConfiguration.RM_RESOURCE_TRACKER_ADDRESS,
         YarnConfiguration.DEFAULT_RM_RESOURCE_TRACKER_ADDRESS,
@@ -147,11 +147,11 @@ public class NodeStatusUpdaterImpl extends AbstractService implements
         " physical-memory=" + memoryMb + " virtual-memory=" + virtualMemoryMb +
         " physical-cores=" + cpuCores + " virtual-cores=" + virtualCores);
     
-    super.innerInit(conf);
+    super.serviceInit(conf);
   }
 
   @Override
-  protected void innerStart() throws Exception {
+  protected void serviceStart() throws Exception {
 
     // NodeManager is the last service to start, so NodeId is available.
     this.nodeId = this.context.getNodeId();
@@ -160,19 +160,19 @@ public class NodeStatusUpdaterImpl extends AbstractService implements
       // Registration has to be in start so that ContainerManager can get the
       // perNM tokens needed to authenticate ContainerTokens.
       registerWithRM();
-      super.innerStart();
+      super.serviceStart();
       startStatusUpdater();
     } catch (Exception e) {
       throw new AvroRuntimeException(e);
     }
-    super.innerStart();
+    super.serviceStart();
   }
 
   @Override
-  protected void innerStop() throws Exception {
+  protected void serviceStop() throws Exception {
     // Interrupt the updater.
     this.isStopped = true;
-    super.innerStop();
+    super.serviceStop();
   }
 
   protected void rebootNodeStatusUpdater() {

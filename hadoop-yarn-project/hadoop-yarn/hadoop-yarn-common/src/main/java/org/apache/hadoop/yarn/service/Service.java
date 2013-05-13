@@ -22,7 +22,6 @@ import org.apache.hadoop.conf.Configuration;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
@@ -133,13 +132,13 @@ public interface Service extends Closeable {
    * Register an instance of the service state change events.
    * @param listener a new listener
    */
-  void register(ServiceStateChangeListener listener);
+  void registerServiceListener(ServiceStateChangeListener listener);
 
   /**
    * Unregister a previously instance of the service state change events.
    * @param listener the listener to unregister.
    */
-  void unregister(ServiceStateChangeListener listener);
+  void unregisterServiceListener(ServiceStateChangeListener listener);
 
   /**
    * Get the name of this service.
@@ -175,7 +174,7 @@ public interface Service extends Closeable {
    * @param state the expected state
    * @return true if, at the time of invocation, the service was in that state.
    */
-  boolean inState(STATE state);
+  boolean isInState(STATE state);
 
   /**
    * Get the first exception raised during the service failure. If null,
@@ -209,21 +208,6 @@ public interface Service extends Closeable {
    * @return a possibly empty but never null list of lifecycle events.
    */
   public List<LifecycleEvent> getLifecycleHistory();
-
-  /**
-   * A serializable lifecycle event: the time a state
-   * transition occurred, and what state was entered.
-   */
-  public class LifecycleEvent implements Serializable {
-    /**
-     * Local time in milliseconds when the event occurred
-     */
-    public long time;
-    /**
-     * new state
-     */
-    public Service.STATE state;
-  }
 
   /**
    * Get the blockers on a service -remote dependencies

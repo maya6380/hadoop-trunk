@@ -136,29 +136,29 @@ public abstract class AbstractService implements Service {
 
   /**
    * {@inheritDoc}
-   * This invokes {@link #innerInit}
+   * This invokes {@link #serviceInit}
    * @param conf the configuration of the service. This must not be null
    * @throws ServiceStateException if the configuration was null,
    * the state change not permitted, or something else went wrong
    */
   @Override
-  public void init(Configuration conf) {
-   /* ISSUE: should null configuration be allowed or rejected?
-   if (conf == null) {
+  public final void init(Configuration conf) {
+    if (conf == null) {
       throw new ServiceStateException("Cannot initialize service "
                                       + getName() + ": null configuration");
     }
-    */
-    enterState(STATE.INITED);
-    setConfig(conf);
-    try {
-      innerInit(config);
-      notifyListeners();
-    } catch (Exception e) {
-      noteFailure(e);
-      stopQuietly(this);
-      throw ServiceStateException.convert(e);
+    synchronized (this) {
+      enterState(STATE.INITED);
+      setConfig(conf);
+      try {
+        serviceInit(config);
+      } catch (Exception e) {
+        noteFailure(e);
+        ServiceOperations.stopQuietly(LOG, this);
+        throw ServiceStateException.convert(e);
+      }
     }
+    notifyListeners();
   }
 
   /**
@@ -167,51 +167,61 @@ public abstract class AbstractService implements Service {
    * this action
    */
   @Override
-  public void start() {
+  public final void start() {
     //enter the started state
-    stateModel.enterState(STATE.STARTED);
-    try {
-      startTime = System.currentTimeMillis();
-      innerStart();
-      LOG.info("Service " + getName() + " is started");
-      notifyListeners();
-    } catch (Exception e) {
-      noteFailure(e);
-      stopQuietly(this);
-      throw ServiceStateException.convert(e);
+    synchronized (this) {
+      enterState(STATE.STARTED);
+      try {
+        startTime = System.currentTimeMillis();
+        serviceStart();
+        LOG.info("Service " + getName() + " is started");
+      } catch (Exception e) {
+        noteFailure(e);
+        ServiceOperations.stopQuietly(LOG, this);
+        throw ServiceStateException.convert(e);
+      }
     }
+    notifyListeners();
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public void stop() {
+  public final void stop() {
     //this operation is only invoked if the service is not already stopped;
     // it is not an error
     //to go STOPPED->STOPPED -it is just a no-op
-    if (enterState(STATE.STOPPED) != STATE.STOPPED) {
-      try {
-        innerStop();
-      } catch (Exception e) {
-        //stop-time exceptions are logged if they are the first one,
-        noteFailure(e);
-        throw ServiceStateException.convert(e);
-      } finally {
-        //report that the service has terminated
-        synchronized (terminationNotification) {
-          terminationNotification.set(true);
-          terminationNotification.notifyAll();
+    boolean stateChanged;
+    synchronized (this) {
+      stateChanged = enterState(STATE.STOPPED) != STATE.STOPPED;
+      if (stateChanged) {
+        try {
+          serviceStop();
+        } catch (Exception e) {
+          //stop-time exceptions are logged if they are the first one,
+          noteFailure(e);
+          throw ServiceStateException.convert(e);
+        } finally {
+  
         }
-        //notify anything listening for events
-        notifyListeners();
-      }
-    } else {
-      //already stopped: note it
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Ignoring re-entrant call to stop()");
+      } else {
+        //already stopped: note it
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Ignoring re-entrant call to stop()");
+        }
       }
     }
+    //outside the sync block, notifications are issued
+    if (stateChanged) {
+      //report that the service has terminated
+      synchronized (terminationNotification) {
+        terminationNotification.set(true);
+        terminationNotification.notifyAll();
+      }      //notify anything listening for events
+      notifyListeners();
+    }
+
   }
 
   /**
@@ -221,27 +231,6 @@ public abstract class AbstractService implements Service {
   @Override
   public final void close() throws IOException {
     stop();
-  }
-
-  /**
-   * Stop a service, logging problems to this
-   * service's log.
-   *
-   * @param service service to stop -can be null
-   * @see ServiceOperations#stopQuietly(Log, Service)
-   */
-  protected void stopQuietly(Service service) {
-    ServiceOperations.stopQuietly(LOG, service);
-  }
-
-  /**
-   * Stop a service
-   *
-   * @param service service to stop -can be null
-   * @see ServiceOperations#stop(Service) 
-   */
-  protected void stopService(Service service) {
-    ServiceOperations.stop(service);
   }
 
   /**
@@ -309,7 +298,7 @@ public abstract class AbstractService implements Service {
    * @throws Exception on a failure -these will be caught,
    * possibly wrapped, and wil; trigger a service stop
    */
-  protected void innerInit(Configuration conf) throws Exception {
+  protected void serviceInit(Configuration conf) throws Exception {
     if (conf != config) {
       LOG.debug("Config has been overridden during init");
       setConfig(conf);
@@ -328,7 +317,7 @@ public abstract class AbstractService implements Service {
    * @throws Exception if needed -these will be caught,
    * wrapped, and trigger a service stop
    */
-  protected void innerStart() throws Exception {
+  protected void serviceStart() throws Exception {
 
   }
 
@@ -347,17 +336,17 @@ public abstract class AbstractService implements Service {
    *
    * @throws Exception if needed -these will be caught and logged.
    */
-  protected void innerStop() throws Exception {
+  protected void serviceStop() throws Exception {
 
   }
 
   @Override
-  public void register(ServiceStateChangeListener l) {
+  public void registerServiceListener(ServiceStateChangeListener l) {
     listeners.add(l);
   }
 
   @Override
-  public void unregister(ServiceStateChangeListener l) {
+  public void unregisterServiceListener(ServiceStateChangeListener l) {
     listeners.remove(l);
   }
 
@@ -439,18 +428,18 @@ public abstract class AbstractService implements Service {
    * it wasn't already in that state, and the state model permits state re-entrancy.
    */
   private STATE enterState(STATE newState) {
-    assert stateModel!=null: "null state in "+name + " " + this.getClass();
-    STATE original = stateModel.enterState(newState);
-    if (original != newState) {
+    assert stateModel != null : "null state in " + name + " " + this.getClass();
+    STATE oldState = stateModel.enterState(newState);
+    if (oldState != newState) {
       LOG.info("Service:" + getName() + " entered state " + getServiceState());
       recordLifecycleEvent();
     }
-    return original;
+    return oldState;
   }
 
   @Override
-  public final boolean inState(Service.STATE expected) {
-    return stateModel.inState(expected);
+  public final boolean isInState(Service.STATE expected) {
+    return stateModel.isInState(expected);
   }
 
   @Override

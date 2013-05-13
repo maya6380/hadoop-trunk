@@ -51,9 +51,9 @@ public class ApplicationMasterLauncher extends AbstractService implements
   }
   
   @Override
-  protected void innerStart() throws Exception {
+  protected void serviceStart() throws Exception {
     launcherHandlingThread.start();
-    super.innerStart();
+    super.serviceStart();
   }
   
   protected Runnable createRunnableLauncher(RMAppAttempt application, 
@@ -71,7 +71,7 @@ public class ApplicationMasterLauncher extends AbstractService implements
   
 
   @Override
-  protected void innerStop() throws Exception {
+  protected void serviceStop() throws Exception {
     launcherHandlingThread.interrupt();
     try {
       launcherHandlingThread.join();

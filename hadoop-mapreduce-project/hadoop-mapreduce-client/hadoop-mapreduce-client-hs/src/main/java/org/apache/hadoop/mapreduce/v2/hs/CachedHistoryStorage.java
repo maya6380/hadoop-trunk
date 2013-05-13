@@ -60,8 +60,8 @@ public class CachedHistoryStorage extends AbstractService implements
 
   @SuppressWarnings("serial")
   @Override
-  public void innerInit(Configuration conf) throws Exception {
-    super.innerInit(conf);
+  public void serviceInit(Configuration conf) throws Exception {
+    super.serviceInit(conf);
     LOG.info("CachedHistoryStorage Init");
 
     loadedJobCacheSize = conf.getInt(

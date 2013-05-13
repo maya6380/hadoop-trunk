@@ -74,20 +74,20 @@ public class BreakableService extends AbstractService {
   }
 
   @Override
-  protected void innerInit(Configuration conf) throws Exception {
+  protected void serviceInit(Configuration conf) throws Exception {
     inc(STATE.INITED);
     maybeFail(failOnInit, "init");
-    super.innerInit(conf);
+    super.serviceInit(conf);
   }
 
   @Override
-  protected void innerStart() {
+  protected void serviceStart() {
     inc(STATE.STARTED);
     maybeFail(failOnStart, "start");
   }
 
   @Override
-  protected void innerStop() {
+  protected void serviceStop() {
     inc(STATE.STOPPED);
     maybeFail(failOnStop, "stop");
   }

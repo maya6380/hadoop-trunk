@@ -65,7 +65,7 @@ public class JobHistoryServer extends CompositeService {
   }
 
   @Override
-  protected void innerInit(Configuration conf) throws Exception {
+  protected void serviceInit(Configuration conf) throws Exception {
     Configuration config = new YarnConfiguration(conf);
 
     config.setBoolean(Dispatcher.DISPATCHER_EXIT_ON_ERROR_KEY, true);
@@ -84,7 +84,7 @@ public class JobHistoryServer extends CompositeService {
     addService(jobHistoryService);
     addService(clientService);
     addService(aggLogDelService);
-    super.innerInit(config);
+    super.serviceInit(config);
   }
 
   protected JHSDelegationTokenSecretManager createJHSSecretManager(
@@ -109,7 +109,7 @@ public class JobHistoryServer extends CompositeService {
   }
 
   @Override
-  protected void innerStart() throws Exception {
+  protected void serviceStart() throws Exception {
     DefaultMetricsSystem.initialize("JobHistoryServer");
     JvmMetrics.initSingleton("JobHistoryServer", null);
     try {
@@ -118,16 +118,16 @@ public class JobHistoryServer extends CompositeService {
       LOG.error("Error while starting the Secret Manager threads", io);
       throw io;
     }
-    super.innerStart();
+    super.serviceStart();
   }
   
   @Override
-  protected void innerStop() throws Exception {
+  protected void serviceStop() throws Exception {
     if (jhsDTSecretManager != null) {
       jhsDTSecretManager.stopThreads();
     }
     DefaultMetricsSystem.shutdown();
-    super.innerStop();
+    super.serviceStop();
   }
 
   @Private

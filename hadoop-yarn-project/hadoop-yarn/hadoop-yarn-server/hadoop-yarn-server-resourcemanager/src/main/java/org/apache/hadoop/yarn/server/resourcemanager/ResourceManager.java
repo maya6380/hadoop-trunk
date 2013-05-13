@@ -137,7 +137,7 @@ public class ResourceManager extends CompositeService implements Recoverable {
   }
   
   @Override
-  protected void innerInit(Configuration conf) throws Exception {
+  protected void serviceInit(Configuration conf) throws Exception {
 
     validateConfigs(conf);
 
@@ -254,7 +254,7 @@ public class ResourceManager extends CompositeService implements Recoverable {
 
     new RMNMInfo(this.rmContext, this.scheduler);
     
-    super.innerInit(conf);
+    super.serviceInit(conf);
   }
   
   @VisibleForTesting
@@ -395,17 +395,17 @@ public class ResourceManager extends CompositeService implements Recoverable {
     }
 
     @Override
-    protected void innerInit(Configuration conf) throws Exception {
+    protected void serviceInit(Configuration conf) throws Exception {
       this.shouldExitOnError =
           conf.getBoolean(Dispatcher.DISPATCHER_EXIT_ON_ERROR_KEY,
             Dispatcher.DEFAULT_DISPATCHER_EXIT_ON_ERROR);
-      super.innerInit(conf);
+      super.serviceInit(conf);
     }
 
     @Override
-    protected void innerStart() throws Exception {
+    protected void serviceStart() throws Exception {
       this.eventProcessor.start();
-      super.innerStart();
+      super.serviceStart();
     }
 
     private final class EventProcessor implements Runnable {
@@ -445,7 +445,7 @@ public class ResourceManager extends CompositeService implements Recoverable {
     }
 
     @Override
-    protected void innerStop() throws Exception {
+    protected void serviceStop() throws Exception {
       this.stopped = true;
       this.eventProcessor.interrupt();
       try {
@@ -453,7 +453,7 @@ public class ResourceManager extends CompositeService implements Recoverable {
       } catch (InterruptedException e) {
         throw new YarnRuntimeException(e);
       }
-      super.innerStop();
+      super.serviceStop();
     }
 
     @Override
@@ -574,7 +574,7 @@ public class ResourceManager extends CompositeService implements Recoverable {
   }
 
   @Override
-  protected void innerStart() throws Exception {
+  protected void serviceStart() throws Exception {
     try {
       doSecureLogin();
     } catch(IOException ie) {
@@ -615,7 +615,7 @@ public class ResourceManager extends CompositeService implements Recoverable {
       conf.set(YarnConfiguration.RM_WEBAPP_ADDRESS, resolvedAddress);
     }
     
-    super.innerStart();
+    super.serviceStart();
 
     /*synchronized(shutdown) {
       try {
@@ -634,7 +634,7 @@ public class ResourceManager extends CompositeService implements Recoverable {
   }
 
   @Override
-  protected void innerStop() throws Exception {
+  protected void serviceStop() throws Exception {
     if (webApp != null) {
       webApp.stop();
     }
@@ -665,7 +665,7 @@ public class ResourceManager extends CompositeService implements Recoverable {
       }
     }
 
-    super.innerStop();
+    super.serviceStop();
   }
   
   protected ResourceTrackerService createResourceTrackerService() {

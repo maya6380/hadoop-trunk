@@ -92,7 +92,7 @@ public class AdminService extends AbstractService implements RMAdminProtocol {
   }
 
   @Override
-  public void innerInit(Configuration conf) throws Exception {
+  public void serviceInit(Configuration conf) throws Exception {
     masterServiceAddress = conf.getSocketAddr(
         YarnConfiguration.RM_ADMIN_ADDRESS,
         YarnConfiguration.DEFAULT_RM_ADMIN_ADDRESS,
@@ -100,11 +100,11 @@ public class AdminService extends AbstractService implements RMAdminProtocol {
     adminAcl = new AccessControlList(conf.get(
         YarnConfiguration.YARN_ADMIN_ACL,
         YarnConfiguration.DEFAULT_YARN_ADMIN_ACL));
-    super.innerInit(conf);
+    super.serviceInit(conf);
   }
 
   @Override
-  protected void innerStart() throws Exception {
+  protected void serviceStart() throws Exception {
     Configuration conf = getConfig();
     YarnRPC rpc = YarnRPC.create(conf);
     this.server =
@@ -123,15 +123,15 @@ public class AdminService extends AbstractService implements RMAdminProtocol {
     this.server.start();
     conf.updateConnectAddr(YarnConfiguration.RM_ADMIN_ADDRESS,
                            server.getListenerAddress());
-    super.innerStart();
+    super.serviceStart();
   }
 
   @Override
-  protected void innerStop() throws Exception {
+  protected void serviceStop() throws Exception {
     if (this.server != null) {
       this.server.stop();
     }
-    super.innerStop();
+    super.serviceStop();
   }
 
   private UserGroupInformation checkAcls(String method) throws YarnException {

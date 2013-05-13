@@ -57,7 +57,7 @@ public class NodesListManager extends AbstractService implements
   }
 
   @Override
-  protected void innerInit(Configuration conf) throws Exception {
+  protected void serviceInit(Configuration conf) throws Exception {
 
     this.conf = conf;
 
@@ -83,7 +83,7 @@ public class NodesListManager extends AbstractService implements
         throw new YarnRuntimeException(ioe2);
       }
     }
-    super.innerInit(conf);
+    super.serviceInit(conf);
   }
 
   private void printConfiguredHosts() {

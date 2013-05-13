@@ -51,7 +51,7 @@ public class WebAppProxyServer extends CompositeService {
   }
 
   @Override
-  protected void innerInit(Configuration conf) throws Exception {
+  protected void serviceInit(Configuration conf) throws Exception {
     Configuration config = new YarnConfiguration(conf);
     try {
       doSecureLogin(conf);      
@@ -60,7 +60,7 @@ public class WebAppProxyServer extends CompositeService {
     }
     proxy = new WebAppProxy();
     addService(proxy);
-    super.innerInit(config);
+    super.serviceInit(config);
   }
 
   /**

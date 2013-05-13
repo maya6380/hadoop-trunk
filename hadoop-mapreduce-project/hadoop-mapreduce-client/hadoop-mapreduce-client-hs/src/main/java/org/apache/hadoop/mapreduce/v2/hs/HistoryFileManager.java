@@ -458,7 +458,7 @@ public class HistoryFileManager extends AbstractService {
   }
 
   @Override
-  protected void innerInit(Configuration conf) throws Exception {
+  protected void serviceInit(Configuration conf) throws Exception {
     this.conf = conf;
 
     int serialNumberLowDigits = 3;
@@ -519,7 +519,7 @@ public class HistoryFileManager extends AbstractService {
     moveToDoneExecutor = new ThreadPoolExecutor(numMoveThreads, numMoveThreads,
         1, TimeUnit.HOURS, new LinkedBlockingQueue<Runnable>(), tf);
 
-    super.innerInit(conf);
+    super.serviceInit(conf);
   }
 
   private void mkdir(FileContext fc, Path path, FsPermission fsp)

@@ -166,7 +166,7 @@ public class DefaultSpeculator extends AbstractService implements
   //  looking for speculation opportunities
 
   @Override
-  protected void innerStart() throws Exception {
+  protected void serviceStart() throws Exception {
     Runnable speculationBackgroundCore
         = new Runnable() {
             @Override
@@ -202,17 +202,17 @@ public class DefaultSpeculator extends AbstractService implements
         (speculationBackgroundCore, "DefaultSpeculator background processing");
     speculationBackgroundThread.start();
 
-    super.innerStart();
+    super.serviceStart();
   }
 
   @Override
-  protected void innerStop ()throws Exception {
+  protected void serviceStop()throws Exception {
       stopped = true;
     // this could be called before background thread is established
     if (speculationBackgroundThread != null) {
       speculationBackgroundThread.interrupt();
     }
-    super.innerStop();
+    super.serviceStop();
   }
 
   @Override

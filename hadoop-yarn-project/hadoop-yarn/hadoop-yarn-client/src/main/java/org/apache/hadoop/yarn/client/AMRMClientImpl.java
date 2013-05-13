@@ -151,12 +151,12 @@ public class AMRMClientImpl<T extends ContainerRequest>
   }
 
   @Override
-  protected void innerInit(Configuration conf) throws Exception {
-    super.innerInit(conf);
+  protected void serviceInit(Configuration conf) throws Exception {
+    super.serviceInit(conf);
   }
 
   @Override
-  protected void innerStart() throws Exception {
+  protected void serviceStart() throws Exception {
     final YarnConfiguration conf = new YarnConfiguration(getConfig());
     final YarnRPC rpc = YarnRPC.create(conf);
     final InetSocketAddress rmAddress = conf.getSocketAddr(
@@ -180,15 +180,15 @@ public class AMRMClientImpl<T extends ContainerRequest>
       }
     });
     LOG.debug("Connecting to ResourceManager at " + rmAddress);
-    super.innerStart();
+    super.serviceStart();
   }
 
   @Override
-  protected void innerStop() throws Exception {
+  protected void serviceStop() throws Exception {
     if (this.rmClient != null) {
       RPC.stopProxy(this.rmClient);
     }
-    super.innerStop();
+    super.serviceStop();
   }
   
   @Override

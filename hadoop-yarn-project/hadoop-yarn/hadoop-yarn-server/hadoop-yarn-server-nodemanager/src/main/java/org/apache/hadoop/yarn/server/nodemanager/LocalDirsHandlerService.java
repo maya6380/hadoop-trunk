@@ -113,7 +113,7 @@ public class LocalDirsHandlerService extends AbstractService {
    * 
    */
   @Override
-  protected void innerInit(Configuration config) throws Exception {
+  protected void serviceInit(Configuration config) throws Exception {
     // Clone the configuration as we may do modifications to dirs-list
     Configuration conf = new Configuration(config);
     diskHealthCheckInterval = conf.getLong(
@@ -126,7 +126,7 @@ public class LocalDirsHandlerService extends AbstractService {
         YarnConfiguration.NM_MIN_HEALTHY_DISKS_FRACTION,
         YarnConfiguration.DEFAULT_NM_MIN_HEALTHY_DISKS_FRACTION);
     lastDisksCheckTime = System.currentTimeMillis();
-    super.innerInit(conf);
+    super.serviceInit(conf);
 
     FileContext localFs;
     try {
@@ -150,24 +150,24 @@ public class LocalDirsHandlerService extends AbstractService {
    * Method used to start the disk health monitoring, if enabled.
    */
   @Override
-  protected void innerStart() throws Exception {
+  protected void serviceStart() throws Exception {
     if (isDiskHealthCheckerEnabled) {
       dirsHandlerScheduler = new Timer("DiskHealthMonitor-Timer", true);
       dirsHandlerScheduler.scheduleAtFixedRate(monitoringTimerTask,
           diskHealthCheckInterval, diskHealthCheckInterval);
     }
-    super.innerStart();
+    super.serviceStart();
   }
 
   /**
    * Method used to terminate the disk health monitoring service.
    */
   @Override
-  protected void innerStop() throws Exception {
+  protected void serviceStop() throws Exception {
     if (dirsHandlerScheduler != null) {
       dirsHandlerScheduler.cancel();
     }
-    super.innerStop();
+    super.serviceStop();
   }
 
   /**

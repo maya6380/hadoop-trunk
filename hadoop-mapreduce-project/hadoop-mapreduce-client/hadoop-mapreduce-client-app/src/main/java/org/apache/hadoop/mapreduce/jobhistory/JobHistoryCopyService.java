@@ -18,7 +18,6 @@
 
 package org.apache.hadoop.mapreduce.jobhistory;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import org.apache.commons.logging.Log;
@@ -58,8 +57,8 @@ public class JobHistoryCopyService extends CompositeService implements HistoryEv
   }
 
   @Override
-  protected void innerInit(Configuration conf) throws Exception {
-    super.innerInit(conf);
+  protected void serviceInit(Configuration conf) throws Exception {
+    super.serviceInit(conf);
   }
   
   @Override
@@ -71,14 +70,14 @@ public class JobHistoryCopyService extends CompositeService implements HistoryEv
   }
   
   @Override
-  protected void innerStart() throws Exception {
+  protected void serviceStart() throws Exception {
     try {
       //TODO should we parse on a background thread???
       parse();
     } catch (IOException e) {
       throw new YarnRuntimeException(e);
     }
-    super.innerStart();
+    super.serviceStart();
   }
   
   private void parse() throws IOException {

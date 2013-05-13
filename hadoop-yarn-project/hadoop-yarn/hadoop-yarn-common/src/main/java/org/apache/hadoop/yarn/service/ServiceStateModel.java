@@ -76,7 +76,7 @@ public class ServiceStateModel {
    * @param proposed proposed new state
    * @return the state
    */
-  public boolean inState(Service.STATE proposed) {
+  public boolean isInState(Service.STATE proposed) {
     return state.equals(proposed);
   }
 
@@ -104,10 +104,10 @@ public class ServiceStateModel {
    */
   public synchronized Service.STATE enterState(Service.STATE proposed) {
     checkStateTransition(name, state, proposed);
-    Service.STATE original = state;
+    Service.STATE oldState = state;
     //atomic write of the new state
     state = proposed;
-    return original;
+    return oldState;
   }
 
   /**

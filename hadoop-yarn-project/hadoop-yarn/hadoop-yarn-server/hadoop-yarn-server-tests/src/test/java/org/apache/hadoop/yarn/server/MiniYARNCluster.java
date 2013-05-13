@@ -140,10 +140,10 @@ public class MiniYARNCluster extends CompositeService {
   }
   
   @Override
-  public void innerInit(Configuration conf) throws Exception {
-    super.innerInit(conf instanceof YarnConfiguration ? conf
-                                                      : new YarnConfiguration(
-                                                        conf));
+  public void serviceInit(Configuration conf) throws Exception {
+    super.serviceInit(conf instanceof YarnConfiguration ? conf
+                                                        : new YarnConfiguration(
+                                                          conf));
   }
 
   public File getTestWorkDir() {
@@ -173,7 +173,7 @@ public class MiniYARNCluster extends CompositeService {
     }
 
     @Override
-    public synchronized void innerStart() throws Exception {
+    public synchronized void serviceStart() throws Exception {
       try {
         getConfig().setBoolean(YarnConfiguration.IS_MINI_YARN_CLUSTER, true);
         if (!getConfig().getBoolean(
@@ -216,7 +216,7 @@ public class MiniYARNCluster extends CompositeService {
               "ResourceManager failed to start. Final state is "
                   + resourceManager.getServiceState());
         }
-        super.innerStart();
+        super.serviceStart();
       } catch (Throwable t) {
         throw new YarnRuntimeException(t);
       }
@@ -227,11 +227,11 @@ public class MiniYARNCluster extends CompositeService {
     }
 
     @Override
-    public synchronized void innerStop() throws Exception {
+    public synchronized void serviceStop() throws Exception {
       if (resourceManager != null) {
         resourceManager.stop();
       }
-      super.innerStop();
+      super.serviceStop();
 
       if (Shell.WINDOWS) {
         // On Windows, clean up the short temporary symlink that was created to
@@ -256,9 +256,9 @@ public class MiniYARNCluster extends CompositeService {
       index = i;
     }
 
-    public synchronized void innerInit(Configuration conf) throws Exception {
+    public synchronized void serviceInit(Configuration conf) throws Exception {
       Configuration config = new YarnConfiguration(conf);
-      super.innerInit(config);
+      super.serviceInit(config);
     }
 
     /**
@@ -281,7 +281,7 @@ public class MiniYARNCluster extends CompositeService {
       return dirsString;
     }
 
-    public synchronized void innerStart() throws Exception {
+    public synchronized void serviceStart() throws Exception {
       try {
         // create nm-local-dirs and configure them for the nodemanager
         String localDirsString = prepareDirs("local", numLocalDirs);
@@ -321,18 +321,18 @@ public class MiniYARNCluster extends CompositeService {
           // RM could have failed.
           throw new IOException("NodeManager " + index + " failed to start");
         }
-        super.innerStart();
+        super.serviceStart();
       } catch (Throwable t) {
         throw new YarnRuntimeException(t);
       }
     }
 
     @Override
-    public synchronized void innerStop() throws Exception {
+    public synchronized void serviceStop() throws Exception {
       if (nodeManagers[index] != null) {
         nodeManagers[index].stop();
       }
-      super.innerStop();
+      super.serviceStop();
     }
   }
   

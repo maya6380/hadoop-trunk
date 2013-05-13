@@ -239,7 +239,7 @@ public class ContainerLauncherImpl extends AbstractService implements
   }
 
   @Override
-  protected void innerInit(Configuration config) throws Exception {
+  protected void serviceInit(Configuration config) throws Exception {
     Configuration conf = new Configuration(config);
     conf.setInt(
         CommonConfigurationKeysPublic.IPC_CLIENT_CONNECTION_MAXIDLETIME_KEY,
@@ -249,14 +249,14 @@ public class ContainerLauncherImpl extends AbstractService implements
         MRJobConfig.DEFAULT_MR_AM_CONTAINERLAUNCHER_THREAD_COUNT_LIMIT);
     LOG.info("Upper limit on the thread pool size is " + this.limitOnPoolSize);
     this.rpc = createYarnRPC(conf);
-    super.innerInit(conf);
+    super.serviceInit(conf);
   }
   
   protected YarnRPC createYarnRPC(Configuration conf) {
     return YarnRPC.create(conf);
   }
 
-  protected void innerStart() throws Exception {
+  protected void serviceStart() throws Exception {
 
     ThreadFactory tf = new ThreadFactoryBuilder().setNameFormat(
         "ContainerLauncher #%d").setDaemon(true).build();
@@ -317,7 +317,7 @@ public class ContainerLauncherImpl extends AbstractService implements
     };
     eventHandlingThread.setName("ContainerLauncher Event Handler");
     eventHandlingThread.start();
-    super.innerStart();
+    super.serviceStart();
   }
 
   private void shutdownAllContainers() {
@@ -328,7 +328,7 @@ public class ContainerLauncherImpl extends AbstractService implements
     }
   }
 
-  protected void innerStop() throws Exception {
+  protected void serviceStop() throws Exception {
     if (stopped.getAndSet(true)) {
       // return if already stopped
       return;
@@ -341,7 +341,7 @@ public class ContainerLauncherImpl extends AbstractService implements
     if (launcherPool != null) {
       launcherPool.shutdownNow();
     }
-    super.innerStop();
+    super.serviceStop();
   }
 
   protected EventProcessor createEventProcessor(ContainerLauncherEvent event) {

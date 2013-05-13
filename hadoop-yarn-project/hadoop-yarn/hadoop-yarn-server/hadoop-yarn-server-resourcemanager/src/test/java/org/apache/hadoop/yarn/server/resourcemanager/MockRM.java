@@ -293,12 +293,12 @@ public class MockRM extends ResourceManager {
     return new ClientRMService(getRMContext(), getResourceScheduler(),
         rmAppManager, applicationACLsManager, rmDTSecretManager) {
       @Override
-      protected void innerStart() {
+      protected void serviceStart() {
         // override to not start rpc handler
       }
 
       @Override
-      protected void innerStop() {
+      protected void serviceStop() {
         // don't do anything
       }
     };
@@ -313,12 +313,12 @@ public class MockRM extends ResourceManager {
         this.nmLivelinessMonitor, containerTokenSecretManager) {
 
       @Override
-      protected void innerStart() {
+      protected void serviceStart() {
         // override to not start rpc handler
       }
 
       @Override
-      protected void innerStop() {
+      protected void serviceStop() {
         // don't do anything
       }
     };
@@ -328,12 +328,12 @@ public class MockRM extends ResourceManager {
   protected ApplicationMasterService createApplicationMasterService() {
     return new ApplicationMasterService(getRMContext(), scheduler) {
       @Override
-      protected void innerStart() {
+      protected void serviceStart() {
         // override to not start rpc handler
       }
 
       @Override
-      protected void innerStop() {
+      protected void serviceStop() {
         // don't do anything
       }
     };
@@ -343,7 +343,7 @@ public class MockRM extends ResourceManager {
   protected ApplicationMasterLauncher createAMLauncher() {
     return new ApplicationMasterLauncher(getRMContext()) {
       @Override
-      protected void innerStart() {
+      protected void serviceStart() {
         // override to not start rpc handler
       }
 
@@ -353,7 +353,7 @@ public class MockRM extends ResourceManager {
       }
 
       @Override
-      protected void innerStop() {
+      protected void serviceStop() {
         // don't do anything
       }
     };
@@ -367,12 +367,12 @@ public class MockRM extends ResourceManager {
         this.nodesListManager, clientRMService, applicationMasterService,
         resourceTrackerService) {
       @Override
-      protected void innerStart() {
+      protected void serviceStart() {
         // override to not start rpc handler
       }
 
       @Override
-      protected void innerStop() {
+      protected void serviceStop() {
         // don't do anything
       }
     };

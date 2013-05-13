@@ -99,7 +99,7 @@ public class ResourceTrackerService extends AbstractService implements
   }
 
   @Override
-  protected void innerInit(Configuration conf) throws Exception {
+  protected void serviceInit(Configuration conf) throws Exception {
     resourceTrackerAddress = conf.getSocketAddr(
         YarnConfiguration.RM_RESOURCE_TRACKER_ADDRESS,
         YarnConfiguration.DEFAULT_RM_RESOURCE_TRACKER_ADDRESS,
@@ -122,12 +122,12 @@ public class ResourceTrackerService extends AbstractService implements
     	YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_VCORES,
     	YarnConfiguration.DEFAULT_RM_SCHEDULER_MINIMUM_ALLOCATION_VCORES);
     
-    super.innerInit(conf);
+    super.serviceInit(conf);
   }
 
   @Override
-  protected void innerStart() throws Exception {
-    super.innerStart();
+  protected void serviceStart() throws Exception {
+    super.serviceStart();
     // ResourceTrackerServer authenticates NodeManager via Kerberos if
     // security is enabled, so no secretManager.
     Configuration conf = getConfig();
@@ -151,11 +151,11 @@ public class ResourceTrackerService extends AbstractService implements
   }
 
   @Override
-  protected void innerStop() throws Exception {
+  protected void serviceStop() throws Exception {
     if (this.server != null) {
       this.server.stop();
     }
-    super.innerStop();
+    super.serviceStop();
   }
 
   @SuppressWarnings("unchecked")

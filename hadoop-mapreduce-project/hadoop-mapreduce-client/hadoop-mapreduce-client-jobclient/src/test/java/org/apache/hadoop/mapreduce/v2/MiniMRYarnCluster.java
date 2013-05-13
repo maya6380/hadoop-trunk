@@ -68,7 +68,7 @@ public class MiniMRYarnCluster extends MiniYARNCluster {
   }
 
   @Override
-  public void innerInit(Configuration conf) throws Exception {
+  public void serviceInit(Configuration conf) throws Exception {
     conf.set(MRConfig.FRAMEWORK_NAME, MRConfig.YARN_FRAMEWORK_NAME);
     if (conf.get(MRJobConfig.MR_AM_STAGING_DIR) == null) {
       conf.set(MRJobConfig.MR_AM_STAGING_DIR, new File(getTestWorkDir(),
@@ -122,7 +122,7 @@ public class MiniMRYarnCluster extends MiniYARNCluster {
     // for corresponding uberized tests.
     conf.setBoolean(MRJobConfig.JOB_UBERTASK_ENABLE, false);
 
-    super.innerInit(conf);
+    super.serviceInit(conf);
   }
 
   private class JobHistoryServerWrapper extends AbstractService {
@@ -131,7 +131,7 @@ public class MiniMRYarnCluster extends MiniYARNCluster {
     }
 
     @Override
-    public synchronized void innerStart() throws Exception {
+    public synchronized void serviceStart() throws Exception {
       try {
         if (!getConfig().getBoolean(
             JHAdminConfig.MR_HISTORY_MINICLUSTER_FIXED_PORTS,
@@ -157,7 +157,7 @@ public class MiniMRYarnCluster extends MiniYARNCluster {
         if (historyServer.getServiceState() != STATE.STARTED) {
           throw new IOException("HistoryServer failed to start");
         }
-        super.innerStart();
+        super.serviceStart();
       } catch (Exception t) {
         throw t;
       } catch (Throwable t) {
@@ -180,9 +180,9 @@ public class MiniMRYarnCluster extends MiniYARNCluster {
     }
 
     @Override
-    public synchronized void innerStop() throws Exception {
+    public synchronized void serviceStop() throws Exception {
       ServiceOperations.stop(historyServer);
-      super.innerStop();
+      super.serviceStop();
     }
   }
 

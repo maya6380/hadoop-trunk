@@ -262,10 +262,10 @@ public class TestFail {
           return NetUtils.createSocketAddr("localhost", 1234);
         }
 
-        protected void innerInit(Configuration conf) throws Exception {
+        protected void serviceInit(Configuration conf) throws Exception {
           conf.setInt(MRJobConfig.TASK_TIMEOUT, 1*1000);//reduce timeout
           conf.setInt(MRJobConfig.TASK_TIMEOUT_CHECK_INTERVAL_MS, 1*1000);
-          super.innerInit(conf);
+          super.serviceInit(conf);
         }
       };
     }

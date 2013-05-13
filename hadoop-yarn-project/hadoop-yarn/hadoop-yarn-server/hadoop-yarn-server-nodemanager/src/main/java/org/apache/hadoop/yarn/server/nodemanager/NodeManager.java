@@ -128,7 +128,7 @@ public class NodeManager extends CompositeService
   }
 
   @Override
-  protected void innerInit(Configuration conf) throws Exception {
+  protected void serviceInit(Configuration conf) throws Exception {
 
     conf.setBoolean(Dispatcher.DISPATCHER_EXIT_ON_ERROR_KEY, true);
 
@@ -192,28 +192,28 @@ public class NodeManager extends CompositeService
             YarnConfiguration.DEFAULT_NM_PROCESS_KILL_WAIT_MS) +
         SHUTDOWN_CLEANUP_SLOP_MS;
     
-    super.innerInit(conf);
+    super.serviceInit(conf);
     // TODO add local dirs to del
   }
 
   @Override
-  protected void innerStart() throws Exception {
+  protected void serviceStart() throws Exception {
     try {
       doSecureLogin();
     } catch (IOException e) {
       throw new YarnRuntimeException("Failed NodeManager login", e);
     }
-    super.innerStart();
+    super.serviceStart();
   }
 
   @Override
-  protected void innerStop() throws Exception {
+  protected void serviceStop() throws Exception {
     if (isStopping.getAndSet(true)) {
       return;
     }
 
     cleanupContainers(NodeManagerEventType.SHUTDOWN);
-    super.innerStop();
+    super.serviceStop();
     DefaultMetricsSystem.shutdown();
   }
 
