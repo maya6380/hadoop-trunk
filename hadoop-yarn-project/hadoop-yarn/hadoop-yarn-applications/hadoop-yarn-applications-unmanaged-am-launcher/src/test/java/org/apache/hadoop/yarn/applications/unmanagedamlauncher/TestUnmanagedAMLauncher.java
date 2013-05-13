@@ -74,11 +74,12 @@ public class TestUnmanagedAMLauncher {
       }
       //write the document to a buffer (not directly to the file, as that
       //can cause the file being written to get read -which will then fail.
-      ByteArrayOutputStream out1 = new ByteArrayOutputStream();
-      yarnClusterConfig.writeXml(out1);
-      out1.close();
+      ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
+      yarnClusterConfig.writeXml(bytesOut);
+      bytesOut.close();
+      //write the bytes to the file in the classpath
       OutputStream os = new FileOutputStream(new File(url.getPath()));
-      os.write(out1.toByteArray());
+      os.write(bytesOut.toByteArray());
       os.close();
     }
     try {
