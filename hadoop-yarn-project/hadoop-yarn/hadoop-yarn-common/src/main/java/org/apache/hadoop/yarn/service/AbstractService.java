@@ -142,7 +142,7 @@ public abstract class AbstractService implements Service {
    * the state change not permitted, or something else went wrong
    */
   @Override
-  public final void init(Configuration conf) {
+  public void init(Configuration conf) {
     if (conf == null) {
       throw new ServiceStateException("Cannot initialize service "
                                       + getName() + ": null configuration");
@@ -167,7 +167,7 @@ public abstract class AbstractService implements Service {
    * this action
    */
   @Override
-  public final void start() {
+  public void start() {
     //enter the started state
     synchronized (this) {
       enterState(STATE.STARTED);
@@ -188,7 +188,7 @@ public abstract class AbstractService implements Service {
    * {@inheritDoc}
    */
   @Override
-  public final void stop() {
+  public void stop() {
     //this operation is only invoked if the service is not already stopped;
     // it is not an error
     //to go STOPPED->STOPPED -it is just a no-op
@@ -253,7 +253,7 @@ public abstract class AbstractService implements Service {
         failureCause = exception;
         failureState = getServiceState();
         LOG.info("Service " + getName()
-                 + "failed in state " + failureState
+                 + " failed in state " + failureState
                  + "; cause: " + exception,
                  exception);
       }
@@ -431,7 +431,10 @@ public abstract class AbstractService implements Service {
     assert stateModel != null : "null state in " + name + " " + this.getClass();
     STATE oldState = stateModel.enterState(newState);
     if (oldState != newState) {
-      LOG.info("Service:" + getName() + " entered state " + getServiceState());
+      if (LOG.isDebugEnabled()) {
+        LOG.debug(
+          "Service: " + getName() + " entered state " + getServiceState());
+      }
       recordLifecycleEvent();
     }
     return oldState;

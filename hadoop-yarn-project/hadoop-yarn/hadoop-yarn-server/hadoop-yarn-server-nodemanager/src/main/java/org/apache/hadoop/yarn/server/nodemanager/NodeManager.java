@@ -217,6 +217,10 @@ public class NodeManager extends CompositeService
     DefaultMetricsSystem.shutdown();
   }
 
+  public String getName() {
+    return "NodeManager";
+  }
+
   protected void resyncWithRM() {
     //we do not want to block dispatcher thread here
     new Thread() {
