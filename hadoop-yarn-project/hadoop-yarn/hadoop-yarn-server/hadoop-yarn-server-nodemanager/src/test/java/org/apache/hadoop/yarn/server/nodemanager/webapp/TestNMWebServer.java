@@ -28,7 +28,6 @@ import java.io.Writer;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileUtil;
-import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ContainerId;
@@ -155,8 +154,6 @@ public class TestNMWebServer {
         return true;
       }
     };
-    Assert.assertFalse("port is open before test",
-                       NetUtils.verifyPortOpen("localhost", 8042, 1000));
     Configuration conf = new Configuration();
     conf.set(YarnConfiguration.NM_LOCAL_DIRS, testRootDir.getAbsolutePath());
     conf.set(YarnConfiguration.NM_LOG_DIRS, testLogDir.getAbsolutePath());
@@ -166,11 +163,7 @@ public class TestNMWebServer {
 
     WebServer server = new WebServer(nmContext, resourceView,
         new ApplicationACLsManager(conf), dirsHandler);
-    Assert.assertFalse("port is open before init",
-                       NetUtils.verifyPortOpen("localhost",8042,1000));
     server.init(conf);
-    Assert.assertFalse("port is open after init",
-                       NetUtils.verifyPortOpen("localhost", 8042, 1000));
     server.start();
 
     // Add an application and the corresponding containers
