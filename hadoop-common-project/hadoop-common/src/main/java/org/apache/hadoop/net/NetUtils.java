@@ -51,7 +51,6 @@ import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
-import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.ipc.Server;
 import org.apache.hadoop.ipc.VersionedProtocol;
 import org.apache.hadoop.security.SecurityUtil;
@@ -548,28 +547,7 @@ public class NetUtils {
         "No daemon is listening on the target port.");
     }
   }
-
-  /**
-   * verify that a port is open on the target machine
-   * @param hostname host
-   * @param port port number
-   * @param timeout timeout
-   * @return true if a connection could me made to hostname:port.
-   */
-  public static boolean verifyPortOpen(String hostname, int port,
-                                int timeout) {
-    SocketAddress sockAddr = new InetSocketAddress(hostname, port);
-    Socket socket = new Socket();
-    try {
-      connect(socket, sockAddr, timeout);
-    } catch (IOException e) {
-      return false;
-    } finally {
-      IOUtils.closeSocket(socket);
-    }
-    return true;
-  }
-
+  
   /** 
    * Given a string representation of a host, return its ip address
    * in textual presentation.
