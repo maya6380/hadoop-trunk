@@ -18,6 +18,9 @@
 
 package org.apache.hadoop.yarn.service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * A state change listener that logs the number of state change events received,
  * and the last state invoked.
@@ -29,6 +32,15 @@ public class BreakableStateChangeListener
 
   private final String name;
 
+  private int eventCount;
+  private int failureCount;
+  private Service lastService;
+  private Service.STATE lastState = Service.STATE.NOTINITED;
+  //no callbacks are ever received for this event, so it
+  //can be used as an 'undefined'.
+  private Service.STATE failingState = Service.STATE.NOTINITED;
+  private List<Service.STATE> stateEventList = new ArrayList<Service.STATE>(4);
+
   public BreakableStateChangeListener() {
     this( "BreakableStateChangeListener");
   }
@@ -37,19 +49,12 @@ public class BreakableStateChangeListener
     this.name = name;
   }
 
-  private int eventCount;
-  private int failureCount;
-  private Service lastService;
-  private Service.STATE lastState = Service.STATE.NOTINITED;
-  //no callbacks are ever received for this event, so it
-  //can be used as an 'undefined'.
-  private Service.STATE failingState = Service.STATE.NOTINITED;
-
   @Override
   public synchronized void stateChanged(Service service) {
     eventCount++;
     lastService = service;
     lastState = service.getServiceState();
+    stateEventList.add(lastState);
     if (lastState == failingState) {
       failureCount++;
       throw new BreakableService.BrokenLifecycleEvent(service,
@@ -80,8 +85,18 @@ public class BreakableStateChangeListener
     return failureCount;
   }
 
+  public List<Service.STATE> getStateEventList() {
+    return stateEventList;
+  }
+
   @Override
   public synchronized String toString() {
-    return name + " - event count = " + eventCount + " last state " + lastState;
+    String s =
+      name + " - event count = " + eventCount + " last state " + lastState;
+    StringBuilder history = new StringBuilder(stateEventList.size()*10);
+    for (Service.STATE state: stateEventList) {
+      history.append(state).append(" ");
+    }
+    return s + " [ " + history + "]";
   }
 }

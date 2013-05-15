@@ -232,13 +232,18 @@ public class TestServiceLifecycle extends ServiceAssert {
     BreakableStateChangeListener listener = new BreakableStateChangeListener();
     svc.registerServiceListener(listener);
     svc.init(new Configuration());
-    assertEquals(1, listener.getEventCount());
+    assertEventCount(listener, 1);
     svc.start();
-    assertEquals(2, listener.getEventCount());
+    assertEventCount(listener, 2);
     svc.stop();
-    assertEquals(3, listener.getEventCount());
+    assertEventCount(listener, 3);
     svc.stop();
-    assertEquals(3, listener.getEventCount());
+    assertEventCount(listener, 3);
+  }
+
+  private void assertEventCount(BreakableStateChangeListener listener,
+                                int expected) {
+    assertEquals(listener.toString(), expected, listener.getEventCount());
   }
 
   @Test
@@ -248,17 +253,161 @@ public class TestServiceLifecycle extends ServiceAssert {
     listener.setFailingState(Service.STATE.STARTED);
     svc.registerServiceListener(listener);
     svc.init(new Configuration());
-    assertEquals(1, listener.getEventCount());
+    assertEventCount(listener, 1);
     //start this; the listener failed but this won't show
     svc.start();
     //counter went up
-    assertEquals(2, listener.getEventCount());
+    assertEventCount(listener, 2);
     assertEquals(1, listener.getFailureCount());
     //stop the service -this doesn't fail
     svc.stop();
-    assertEquals(3, listener.getEventCount());
+    assertEventCount(listener, 3);
     assertEquals(1, listener.getFailureCount());
     svc.stop();
+  }
+
+  /**
+   * This test verifies that you can block waiting for something to happen
+   * and use notifications to manage it
+   * @throws Throwable on a failure
+   */
+  @Test
+  public void testListenerWithNotifications() throws Throwable {
+    //this tests that a listener can get notified when a service is stopped
+    AsyncSelfTerminatingService service = new AsyncSelfTerminatingService(2000);
+    NotifyingListener listener = new NotifyingListener();
+    service.registerServiceListener(listener);
+    service.init(new Configuration());
+    service.start();
+    assertServiceInState(service, Service.STATE.STARTED);
+    long start = System.currentTimeMillis();
+    synchronized (listener) {
+      listener.wait(20000);
+    }
+    long duration = System.currentTimeMillis() - start;
+    assertEquals(Service.STATE.STOPPED, listener.notifyingState);
+    assertServiceInState(service, Service.STATE.STOPPED);
+    assertTrue("Duration of " + duration + " too long", duration < 10000);
+  }
+
+  @Test
+  public void testSelfTerminatingService() throws Throwable {
+    SelfTerminatingService service = new SelfTerminatingService();
+    BreakableStateChangeListener listener = new BreakableStateChangeListener();
+    service.registerServiceListener(listener);
+    service.init(new Configuration());
+    assertEventCount(listener, 1);
+    //start the service
+    service.start();
+    //and expect an event count of exactly two
+    assertEventCount(listener, 2);
+  }
+  
+  @Test
+  public void testStartInInitService() throws Throwable {
+    Service service = new StartInInitService();
+    BreakableStateChangeListener listener = new BreakableStateChangeListener();
+    service.registerServiceListener(listener);
+    service.init(new Configuration());
+    assertServiceInState(service, Service.STATE.STARTED);
+    assertEventCount(listener, 1);
+  }
+    
+  @Test
+  public void testStopInInitService() throws Throwable {
+    Service service = new StopInInitService();
+    BreakableStateChangeListener listener = new BreakableStateChangeListener();
+    service.registerServiceListener(listener);
+    service.init(new Configuration());
+    assertServiceInState(service, Service.STATE.STOPPED);
+    assertEventCount(listener, 1);
+  }
+  
+  /**
+   * Listener that wakes up all threads waiting on it
+   */
+  private static class NotifyingListener implements ServiceStateChangeListener {
+    public Service.STATE notifyingState = Service.STATE.NOTINITED;
+    
+    public synchronized void stateChanged(Service service) {
+      notifyingState = service.getServiceState();
+      this.notifyAll();
+    }
+  }
+
+  /**
+   * Service that terminates itself after starting and sleeping for a while
+   */
+  private static class AsyncSelfTerminatingService extends AbstractService
+                                               implements Runnable {
+    final int timeout;
+    private AsyncSelfTerminatingService(int timeout) {
+      super("AsyncSelfTerminatingService");
+      this.timeout = timeout;
+    }
+
+    @Override
+    protected void serviceStart() throws Exception {
+      new Thread(this).start();
+      super.serviceStart();
+    }
+
+    @Override
+    public void run() {
+      try {
+        Thread.sleep(timeout);
+      } catch (InterruptedException ignored) {
+
+      }
+      this.stop();
+    }
+  }
+  
+  /**
+   * Service that terminates itself in startup
+   */
+  private static class SelfTerminatingService extends AbstractService {
+    private SelfTerminatingService() {
+      super("SelfTerminatingService");
+    }
+
+    @Override
+    protected void serviceStart() throws Exception {
+      //start
+      super.serviceStart();
+      //then stop
+      stop();
+    }
+  }
+
+  /**
+   * Service that starts itself in init
+   */
+  private static class StartInInitService extends AbstractService {
+    private StartInInitService() {
+      super("StartInInitService");
+    }
+
+    @Override
+    protected void serviceInit(Configuration conf) throws Exception {
+      super.serviceInit(conf);
+      start();
+    }
+  }
+
+  /**
+   * Service that starts itself in init
+   */
+  private static class StopInInitService extends AbstractService {
+    private StopInInitService() {
+      super("StopInInitService");
+    }
+
+    @Override
+    protected void serviceInit(Configuration conf) throws Exception {
+      super.serviceInit(conf);
+      stop();
+    }
   }
 
 }

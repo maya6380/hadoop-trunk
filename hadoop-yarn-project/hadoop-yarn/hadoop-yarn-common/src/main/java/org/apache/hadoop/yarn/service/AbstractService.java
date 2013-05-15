@@ -121,7 +121,6 @@ public abstract class AbstractService implements Service {
     return failureState;
   }
 
-
   /**
    * Set the configuration for this service.
    * This method is called during {@link #init(Configuration)}
@@ -142,23 +141,25 @@ public abstract class AbstractService implements Service {
    * the state change not permitted, or something else went wrong
    */
   @Override
-  public void init(Configuration conf) {
+  public synchronized void init(Configuration conf) {
     if (conf == null) {
       throw new ServiceStateException("Cannot initialize service "
                                       + getName() + ": null configuration");
     }
-    synchronized (this) {
-      enterState(STATE.INITED);
-      setConfig(conf);
-      try {
-        serviceInit(config);
-      } catch (Exception e) {
-        noteFailure(e);
-        ServiceOperations.stopQuietly(LOG, this);
-        throw ServiceStateException.convert(e);
+    enterState(STATE.INITED);
+    setConfig(conf);
+    try {
+      serviceInit(config);
+      if (isInState(STATE.INITED)) {
+        //if the service ended up here during init,
+        //notify the listeners
+        notifyListeners();
       }
+    } catch (Exception e) {
+      noteFailure(e);
+      ServiceOperations.stopQuietly(LOG, this);
+      throw ServiceStateException.convert(e);
     }
-    notifyListeners();
   }
 
   /**
@@ -167,21 +168,22 @@ public abstract class AbstractService implements Service {
    * this action
    */
   @Override
-  public void start() {
+  public synchronized void start() {
     //enter the started state
-    synchronized (this) {
-      enterState(STATE.STARTED);
-      try {
-        startTime = System.currentTimeMillis();
-        serviceStart();
+    stateModel.enterState(STATE.STARTED);
+    try {
+      startTime = System.currentTimeMillis();
+      serviceStart();
+      if (isInState(STATE.STARTED)) {
+        //if the service started (and isn't now in a later state), notify
         LOG.info("Service " + getName() + " is started");
-      } catch (Exception e) {
-        noteFailure(e);
-        ServiceOperations.stopQuietly(LOG, this);
-        throw ServiceStateException.convert(e);
+        notifyListeners();
       }
+    } catch (Exception e) {
+      noteFailure(e);
+      ServiceOperations.stopQuietly(LOG, this);
+      throw ServiceStateException.convert(e);
     }
-    notifyListeners();
   }
 
   /**
@@ -192,36 +194,28 @@ public abstract class AbstractService implements Service {
     //this operation is only invoked if the service is not already stopped;
     // it is not an error
     //to go STOPPED->STOPPED -it is just a no-op
-    boolean stateChanged;
-    synchronized (this) {
-      stateChanged = enterState(STATE.STOPPED) != STATE.STOPPED;
-      if (stateChanged) {
-        try {
-          serviceStop();
-        } catch (Exception e) {
-          //stop-time exceptions are logged if they are the first one,
-          noteFailure(e);
-          throw ServiceStateException.convert(e);
-        } finally {
-  
+    if (enterState(STATE.STOPPED) != STATE.STOPPED) {
+      try {
+        serviceStop();
+      } catch (Exception e) {
+        //stop-time exceptions are logged if they are the first one,
+        noteFailure(e);
+        throw ServiceStateException.convert(e);
+      } finally {
+        //report that the service has terminated
+        synchronized (terminationNotification) {
+          terminationNotification.set(true);
+          terminationNotification.notifyAll();
         }
-      } else {
-        //already stopped: note it
-        if (LOG.isDebugEnabled()) {
-          LOG.debug("Ignoring re-entrant call to stop()");
-        }
+        //notify anything listening for events
+        notifyListeners();
+      }
+    } else {
+      //already stopped: note it
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Ignoring re-entrant call to stop()");
       }
     }
-    //outside the sync block, notifications are issued
-    if (stateChanged) {
-      //report that the service has terminated
-      synchronized (terminationNotification) {
-        terminationNotification.set(true);
-        terminationNotification.notifyAll();
-      }      //notify anything listening for events
-      notifyListeners();
-    }
-
   }
 
   /**
