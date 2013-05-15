@@ -81,7 +81,7 @@ public class NodeStatusUpdaterImpl extends AbstractService implements
   private InetSocketAddress rmAddress;
   private Resource totalResource;
   private int httpPort;
-  private boolean isStopped;
+  private volatile boolean isStopped;
   private RecordFactory recordFactory = RecordFactoryProvider.getRecordFactory(null);
   private boolean tokenKeepAliveEnabled;
   private long tokenRemovalDelayMs;

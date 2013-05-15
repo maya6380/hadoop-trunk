@@ -28,6 +28,7 @@ import java.io.Writer;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileUtil;
+import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ContainerId;
@@ -104,21 +105,33 @@ public class TestNMWebServer {
     conf.set(YarnConfiguration.NM_WEBAPP_ADDRESS, webAddr);
     WebServer server = new WebServer(nmContext, resourceView,
         new ApplicationACLsManager(conf), dirsHandler);
-    server.init(conf);
-    server.start();
-    return server.getPort();
+    try {
+      server.init(conf);
+      server.start();
+      return server.getPort();
+    } finally {
+      server.stop();
+      healthChecker.stop();
+    }
   }
   
   @Test
   public void testNMWebAppWithOutPort() throws IOException {
     int port = startNMWebAppServer("0.0.0.0");
     Assert.assertTrue("Port is not updated", port > 0);
+    validatePortVal(port);
   }
-  
+
+  private void validatePortVal(int portVal) {
+    Assert.assertTrue("Port is not updated", portVal > 0);
+    Assert.assertTrue("Port is default "+ YarnConfiguration.DEFAULT_NM_PORT,
+                      portVal !=YarnConfiguration.DEFAULT_NM_PORT);
+  }
+
   @Test
   public void testNMWebAppWithEphemeralPort() throws IOException {
     int port = startNMWebAppServer("0.0.0.0:0"); 
-    Assert.assertTrue("Port is not updated", port > 0);
+    validatePortVal(port);
   }
 
   @Test
@@ -142,6 +155,8 @@ public class TestNMWebServer {
         return true;
       }
     };
+    Assert.assertFalse("port is open before test",
+                       NetUtils.verifyPortOpen("localhost", 8042, 1000));
     Configuration conf = new Configuration();
     conf.set(YarnConfiguration.NM_LOCAL_DIRS, testRootDir.getAbsolutePath());
     conf.set(YarnConfiguration.NM_LOG_DIRS, testLogDir.getAbsolutePath());
@@ -151,7 +166,11 @@ public class TestNMWebServer {
 
     WebServer server = new WebServer(nmContext, resourceView,
         new ApplicationACLsManager(conf), dirsHandler);
+    Assert.assertFalse("port is open before init",
+                       NetUtils.verifyPortOpen("localhost",8042,1000));
     server.init(conf);
+    Assert.assertFalse("port is open after init",
+                       NetUtils.verifyPortOpen("localhost", 8042, 1000));
     server.start();
 
     // Add an application and the corresponding containers

@@ -77,6 +77,7 @@ public class WebServer extends AbstractService {
   @Override
   protected void serviceStop() throws Exception {
     if (this.webApp != null) {
+      LOG.debug("Stopping webapp");
       this.webApp.stop();
     }
     super.serviceStop();
