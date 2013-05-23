@@ -28,6 +28,7 @@ import java.io.IOException;
  * interrupt handling code
  * into one place.
  */
+@SuppressWarnings("UseOfSunClasses")
 public final class IrqHandler implements SignalHandler {
 
   public static final String CONTROL_C = "INT";

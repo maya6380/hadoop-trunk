@@ -128,17 +128,22 @@ public class ServiceLauncher
   /**
    * Launch the service. All exceptions that occur are propagated upwards.
    *
+   *
    * @param conf configuration
+   * @param stdout output stream
+   * @param stderr error stream
+   * @throws ClassNotFoundException classname not on the classpath
    * @param rawArgs raw arguments from the main method
    * @param processedArgs arguments after the configuration parameters
    * have been stripped out.
-   * @throws ClassNotFoundException classname not on the classpath
    * @throws IllegalAccessException not allowed at the class
    * @throws InstantiationException not allowed to instantiate it
    * @throws InterruptedException thread interrupted
    * @throws IOException any IO exception
    */
   int launchService(Configuration conf,
+                    PrintStream stdout,
+                    PrintStream stderr,
                     String[] rawArgs,
                     String[] processedArgs)
     throws Throwable {
@@ -178,7 +183,7 @@ public class ServiceLauncher
     service.start();
     if (runService != null) {
       //assume that runnable services are meant to run from here
-      return runService.runService();
+      return runService.runService(stdout, stderr);
     } else {
       //run the service until it stops or an interrupt happens on a different thread.
       service.waitForServiceToStop(0);
@@ -255,20 +260,22 @@ public class ServiceLauncher
    * Parse the command line, building a configuration from it, then
    * launch the service and wait for it to finish. finally, exit
    * passing the status code to the {@link #exit(int)} method.
-   * @param out output stream
+   * @param stdout output stream
+   * @param stderr error stream
    * @param args arguments to the service. arg[0] is 
-   * assumed to be the service classname and is automatically
-   * stripped.
+ * assumed to be the service classname and is automatically
    */
-  public void launchServiceAndExit(PrintStream out,
-                           String[] args) {
+  public void launchServiceAndExit(PrintStream stdout,
+                                   PrintStream stderr,
+                                   String[] args) {
 
     //Currently the config just the default
     Configuration conf = new Configuration();
     String[] processedArgs = extractConfigurationArgs(conf, args);
 
 
-    int exitCode = launchServiceRobustly(out, conf, args, processedArgs);
+    int exitCode = launchServiceRobustly(conf, stderr, stderr, args, processedArgs
+                                        );
     exit(exitCode);
   }
 
@@ -323,20 +330,23 @@ public class ServiceLauncher
    * Launch a service catching all excpetions and downgrading them to exit codes
    *
    *
-   * @param out output stream for printing errors to (alongside the logging back
-   * end)
+   *
+   *
    * @param conf configuration to use
+   * @param stdout output stream
+   * @param stderr error stream
    * @param rawArgs command line arguments
    * @param processedArgs command line after the launcher-specific arguments have
    * been stripped out
    * @return an exit code.
    */
-  protected int launchServiceRobustly(PrintStream out,
-                                   Configuration conf,
-                                   String[] rawArgs,
-                                   String[] processedArgs) {
+  protected int launchServiceRobustly(Configuration conf,
+                                      PrintStream stdout,
+                                      PrintStream stderr,
+                                      String[] rawArgs,
+                                      String[] processedArgs) {
     try {
-      launchService(conf, rawArgs, processedArgs);
+      launchService(conf, stdout, stderr, rawArgs, processedArgs);
       if (service != null) {
         Throwable failure = service.getFailureCause();
         if (failure != null) {
@@ -357,7 +367,7 @@ public class ServiceLauncher
       return exitException.status;
     } catch (Throwable thrown) {
       LOG.error("While running " + getServiceName(), thrown);
-      out.println("While running " + getServiceName()
+      stdout.println("While running " + getServiceName()
                   + ": " + thrown);
       return EXIT_EXCEPTION_THROWN;
     }
@@ -424,7 +434,7 @@ public class ServiceLauncher
         new YarnUncaughtExceptionHandler());
 
       ServiceLauncher serviceLauncher = new ServiceLauncher(serviceClassName);
-      serviceLauncher.launchServiceAndExit(System.err, args);
+      serviceLauncher.launchServiceAndExit(System.out, System.err, args);
     }
   }
 
@@ -435,7 +445,7 @@ public class ServiceLauncher
    * {@link Service#init(Configuration)} operation is invoked via an
    * invocation of {@link RunService#setArgs(String[], String[])}
    * After the service has been successfully started via {@link Service#start()}
-   * the {@link RunService#runService()} method is called to execute the 
+   * the {@link RunService#runService(PrintStream, PrintStream)} method is called to execute the 
    * service. When this method returns, the service launcher will exit, using
    * the return code from the method as its exit option.
    */
@@ -446,15 +456,18 @@ public class ServiceLauncher
      * @param rawArgs the raw list of arguments
      * @param processedArgs the arguments after the preprocessing to
      * extract configuration arguments and strip the command line
+     * 
      */
-    void setArgs(String[] rawArgs, String[] processedArgs);
+    void setArgs(String[] rawArgs, String[] processedArgs) throws IOException;
     
     /**
      * Run a service
      * @return the exit code
      * @throws Throwable any exception to report
+     * @param stdout output stream for normal output
+     * @param stderr output stream for errors
      */
-    int runService() throws Throwable ;
+    int runService(PrintStream stdout, PrintStream stderr) throws Throwable ;
   }
 
   /**
