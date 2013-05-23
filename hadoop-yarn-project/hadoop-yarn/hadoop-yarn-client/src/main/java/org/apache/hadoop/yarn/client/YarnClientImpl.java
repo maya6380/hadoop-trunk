@@ -79,7 +79,11 @@ public class YarnClientImpl extends AbstractService implements YarnClient {
   }
   
   public YarnClientImpl(InetSocketAddress rmAddress) {
-    super(YarnClientImpl.class.getName());
+    this(YarnClientImpl.class.getName(), rmAddress);
+  }
+
+  public YarnClientImpl(String name, InetSocketAddress rmAddress) {
+    super(name);
     this.rmAddress = rmAddress;
   }
 
