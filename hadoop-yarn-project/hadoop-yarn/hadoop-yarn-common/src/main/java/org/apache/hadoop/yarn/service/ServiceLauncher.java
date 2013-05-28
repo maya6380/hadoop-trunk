@@ -29,7 +29,6 @@ import org.apache.hadoop.yarn.YarnUncaughtExceptionHandler;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -121,7 +120,7 @@ public class ServiceLauncher
    * Create an instance of the launcher
    * @param serviceClassName classname of the service
    */
-  ServiceLauncher(String serviceClassName) {
+  public ServiceLauncher(String serviceClassName) {
     this.serviceClassName = serviceClassName;
   }
 
@@ -129,28 +128,25 @@ public class ServiceLauncher
    * Launch the service. All exceptions that occur are propagated upwards.
    *
    *
+   *
+   *
    * @param conf configuration
-   * @param stdout output stream
-   * @param stderr error stream
-   * @throws ClassNotFoundException classname not on the classpath
-   * @param rawArgs raw arguments from the main method
    * @param processedArgs arguments after the configuration parameters
    * have been stripped out.
+   * @throws ClassNotFoundException classname not on the classpath
    * @throws IllegalAccessException not allowed at the class
    * @throws InstantiationException not allowed to instantiate it
    * @throws InterruptedException thread interrupted
    * @throws IOException any IO exception
    */
-  int launchService(Configuration conf,
-                    PrintStream stdout,
-                    PrintStream stderr,
-                    String[] rawArgs,
-                    String[] processedArgs)
+  public int launchService(Configuration conf,
+                           String[] processedArgs)
     throws Throwable {
 
     configuration = conf;
 
-    //Instantiate the class -this requires the service to have a public zero-argument constructor
+    //Instantiate the class -this requires the service to have a public
+    // zero-argument constructor
     Class<?> serviceClass =
       this.getClass().getClassLoader().loadClass(serviceClassName);
     Object instance = serviceClass.newInstance();
@@ -173,7 +169,7 @@ public class ServiceLauncher
     if (service instanceof RunService) {
       //if its a runService, pass in the arguments (hopefully before init)
       runService = (RunService) service;
-      runService.setArgs(rawArgs, processedArgs);
+      runService.setArgs(processedArgs);
     }
     
     //some class constructors init; here this is picked up on.
@@ -183,7 +179,7 @@ public class ServiceLauncher
     service.start();
     if (runService != null) {
       //assume that runnable services are meant to run from here
-      return runService.runService(stdout, stderr);
+      return runService.runService();
     } else {
       //run the service until it stops or an interrupt happens on a different thread.
       service.waitForServiceToStop(0);
@@ -260,22 +256,18 @@ public class ServiceLauncher
    * Parse the command line, building a configuration from it, then
    * launch the service and wait for it to finish. finally, exit
    * passing the status code to the {@link #exit(int)} method.
-   * @param stdout output stream
-   * @param stderr error stream
    * @param args arguments to the service. arg[0] is 
  * assumed to be the service classname and is automatically
    */
-  public void launchServiceAndExit(PrintStream stdout,
-                                   PrintStream stderr,
-                                   String[] args) {
+  public void launchServiceAndExit(String[] args) {
 
     //Currently the config just the default
     Configuration conf = new Configuration();
     String[] processedArgs = extractConfigurationArgs(conf, args);
 
 
-    int exitCode = launchServiceRobustly(conf, stderr, stderr, args, processedArgs
-                                        );
+    int exitCode = launchServiceRobustly(conf,
+                                         processedArgs);
     exit(exitCode);
   }
 
@@ -287,7 +279,7 @@ public class ServiceLauncher
    * classname and is skipped
    * @return the processed list.
    */
-  protected String[] extractConfigurationArgs(Configuration conf,
+  public static String[] extractConfigurationArgs(Configuration conf,
                                               String[] args) {
     //convert args to a list
     List<String> argsList = new ArrayList<String>(args.length - 1);
@@ -332,21 +324,16 @@ public class ServiceLauncher
    *
    *
    *
+   *
    * @param conf configuration to use
-   * @param stdout output stream
-   * @param stderr error stream
-   * @param rawArgs command line arguments
    * @param processedArgs command line after the launcher-specific arguments have
    * been stripped out
    * @return an exit code.
    */
-  protected int launchServiceRobustly(Configuration conf,
-                                      PrintStream stdout,
-                                      PrintStream stderr,
-                                      String[] rawArgs,
-                                      String[] processedArgs) {
+  public int launchServiceRobustly(Configuration conf,
+                                   String[] processedArgs) {
     try {
-      launchService(conf, stdout, stderr, rawArgs, processedArgs);
+      launchService(conf, processedArgs);
       if (service != null) {
         Throwable failure = service.getFailureCause();
         if (failure != null) {
@@ -367,8 +354,6 @@ public class ServiceLauncher
       return exitException.status;
     } catch (Throwable thrown) {
       LOG.error("While running " + getServiceName(), thrown);
-      stdout.println("While running " + getServiceName()
-                  + ": " + thrown);
       return EXIT_EXCEPTION_THROWN;
     }
   }
@@ -434,7 +419,7 @@ public class ServiceLauncher
         new YarnUncaughtExceptionHandler());
 
       ServiceLauncher serviceLauncher = new ServiceLauncher(serviceClassName);
-      serviceLauncher.launchServiceAndExit(System.out, System.err, args);
+      serviceLauncher.launchServiceAndExit(args);
     }
   }
 
@@ -443,9 +428,9 @@ public class ServiceLauncher
    * execution managed by the ServiceLauncher.
    * The command line options will be passed down before the 
    * {@link Service#init(Configuration)} operation is invoked via an
-   * invocation of {@link RunService#setArgs(String[], String[])}
+   * invocation of {@link RunService#setArgs(String[])}
    * After the service has been successfully started via {@link Service#start()}
-   * the {@link RunService#runService(PrintStream, PrintStream)} method is called to execute the 
+   * the {@link RunService#runService()} method is called to execute the 
    * service. When this method returns, the service launcher will exit, using
    * the return code from the method as its exit option.
    */
@@ -453,21 +438,18 @@ public class ServiceLauncher
 
     /**
      * Propagate the command line arguments
-     * @param rawArgs the raw list of arguments
-     * @param processedArgs the arguments after the preprocessing to
-     * extract configuration arguments and strip the command line
      * 
+     * @param args argument list
+     * @throws IOException any problem
      */
-    void setArgs(String[] rawArgs, String[] processedArgs) throws IOException;
+    void setArgs(String[] args) throws IOException;
     
     /**
      * Run a service
      * @return the exit code
      * @throws Throwable any exception to report
-     * @param stdout output stream for normal output
-     * @param stderr output stream for errors
      */
-    int runService(PrintStream stdout, PrintStream stderr) throws Throwable ;
+    int runService() throws Throwable ;
   }
 
   /**
