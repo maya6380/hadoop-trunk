@@ -24,7 +24,7 @@ import sun.misc.SignalHandler;
 import java.io.IOException;
 
 /**
- * This class bundles up all the compiler warnings about abuse of sun.misc 
+ * This class bundles up all the compiler warnings about abuse of sun.misc
  * interrupt handling code
  * into one place.
  */
