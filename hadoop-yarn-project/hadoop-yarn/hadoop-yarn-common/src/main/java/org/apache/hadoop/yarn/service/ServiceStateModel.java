@@ -30,9 +30,9 @@ public class ServiceStateModel {
   private static final boolean[][] statemap =
     {
       //                uninited inited started stopped
-      /* uninited  */    {false,  true, false,  true},
-      /* inited    */    {false, false,  true,  true},
-      /* started   */    {false, false, false,  true},
+      /* uninited  */    {false, true,  false,  true},
+      /* inited    */    {false, true,  true,   true},
+      /* started   */    {false, false, true,   true},
       /* stopped   */    {false, false, false,  true},
     };
 

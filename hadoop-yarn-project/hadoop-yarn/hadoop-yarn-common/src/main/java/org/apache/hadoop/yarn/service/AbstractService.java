@@ -146,19 +146,20 @@ public abstract class AbstractService implements Service {
       throw new ServiceStateException("Cannot initialize service "
                                       + getName() + ": null configuration");
     }
-    enterState(STATE.INITED);
-    setConfig(conf);
-    try {
-      serviceInit(config);
-      if (isInState(STATE.INITED)) {
-        //if the service ended up here during init,
-        //notify the listeners
-        notifyListeners();
+    if (enterState(STATE.INITED) != STATE.INITED) {
+      setConfig(conf);
+      try {
+        serviceInit(config);
+        if (isInState(STATE.INITED)) {
+          //if the service ended up here during init,
+          //notify the listeners
+          notifyListeners();
+        }
+      } catch (Exception e) {
+        noteFailure(e);
+        ServiceOperations.stopQuietly(LOG, this);
+        throw ServiceStateException.convert(e);
       }
-    } catch (Exception e) {
-      noteFailure(e);
-      ServiceOperations.stopQuietly(LOG, this);
-      throw ServiceStateException.convert(e);
     }
   }
 
@@ -170,19 +171,22 @@ public abstract class AbstractService implements Service {
   @Override
   public synchronized void start() {
     //enter the started state
-    stateModel.enterState(STATE.STARTED);
-    try {
-      startTime = System.currentTimeMillis();
-      serviceStart();
-      if (isInState(STATE.STARTED)) {
-        //if the service started (and isn't now in a later state), notify
-        if (LOG.isDebugEnabled()) LOG.debug("Service " + getName() + " is started");
-        notifyListeners();
+    if (stateModel.enterState(STATE.STARTED) != STATE.STARTED) {
+      try {
+        startTime = System.currentTimeMillis();
+        serviceStart();
+        if (isInState(STATE.STARTED)) {
+          //if the service started (and isn't now in a later state), notify
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("Service " + getName() + " is started");
+          }
+          notifyListeners();
+        }
+      } catch (Exception e) {
+        noteFailure(e);
+        ServiceOperations.stopQuietly(LOG, this);
+        throw ServiceStateException.convert(e);
       }
-    } catch (Exception e) {
-      noteFailure(e);
-      ServiceOperations.stopQuietly(LOG, this);
-      throw ServiceStateException.convert(e);
     }
   }
 

@@ -62,12 +62,7 @@ public class TestServiceLifecycle extends ServiceAssert {
     Configuration conf = new Configuration();
     conf.set("test.init","t");
     svc.init(conf);
-    try {
-      svc.init(new Configuration());
-      fail("Expected a failure, got " + svc);
-    } catch (ServiceStateException e) {
-      //expected
-    }
+    svc.init(new Configuration());
     assertStateCount(svc, Service.STATE.INITED, 1);
     assertServiceConfigurationContains(svc, "test.init");
   }
@@ -81,12 +76,7 @@ public class TestServiceLifecycle extends ServiceAssert {
     BreakableService svc = new BreakableService();
     svc.init(new Configuration());
     svc.start();
-    try {
-      svc.start();
-      fail("Expected a failure, got " + svc);
-    } catch (ServiceStateException e) {
-      //expected
-    }
+    svc.start();
     assertStateCount(svc, Service.STATE.STARTED, 1);
   }
 
