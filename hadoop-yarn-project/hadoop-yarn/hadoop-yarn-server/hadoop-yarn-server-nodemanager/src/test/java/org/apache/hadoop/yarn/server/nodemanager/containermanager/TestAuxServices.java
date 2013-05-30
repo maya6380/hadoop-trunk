@@ -63,10 +63,10 @@ public class TestAuxServices {
     }
 
     public ArrayList<Integer> getAppIdsStopped() {
-      return (ArrayList)this.stoppedApps.clone();
+      return (ArrayList<Integer>)this.stoppedApps.clone();
     }
 
-    @Override
+    @Override 
     protected void serviceInit(Configuration conf) throws Exception {
       remaining_init = conf.getInt(idef + ".expected.init", 0);
       remaining_stop = conf.getInt(idef + ".expected.stop", 0);
