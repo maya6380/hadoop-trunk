@@ -250,9 +250,12 @@ public class TestNMClient {
             container.getContainerToken());
         fail("Exception is expected");
       } catch (YarnException e) {
-        assertTrue("The thrown exception is not expected",
-            e.getMessage().contains(
-                "is either not started yet or already stopped"));
+        if (!e.getMessage()
+              .contains("is either not started yet or already stopped")) {
+          throw (AssertionError)
+            (new AssertionError("Exception is not expected: " + e).initCause(
+              e));
+        }
       }
 
       Credentials ts = new Credentials();
@@ -266,7 +269,8 @@ public class TestNMClient {
       try {
         nmClient.startContainer(container, clc);
       } catch (YarnException e) {
-        fail("Exception is not expected");
+        throw (AssertionError)
+          (new AssertionError("Exception is not expected: " + e).initCause(e));
       }
 
       // leave one container unclosed
@@ -279,7 +283,9 @@ public class TestNMClient {
           nmClient.stopContainer(container.getId(), container.getNodeId(),
               container.getContainerToken());
         } catch (YarnException e) {
-          fail("Exception is not expected");
+          throw (AssertionError)
+            (new AssertionError("Exception is not expected: " + e)
+               .initCause(e));
         }
 
         // getContainerStatus can be called after stopContainer
