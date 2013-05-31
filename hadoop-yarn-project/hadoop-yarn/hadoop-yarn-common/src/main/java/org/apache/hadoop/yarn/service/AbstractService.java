@@ -194,7 +194,7 @@ public abstract class AbstractService implements Service {
    * {@inheritDoc}
    */
   @Override
-  public void stop() {
+  public synchronized void stop() {
     //this operation is only invoked if the service is not already stopped;
     // it is not an error
     //to go STOPPED->STOPPED -it is just a no-op
