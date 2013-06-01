@@ -1133,6 +1133,7 @@ public class TestNodeStatusUpdater {
   }
 
   private void verifyNodeStartFailure(String errMessage) throws Exception {
+    Assert.assertNotNull("nm is null", nm);
     YarnConfiguration conf = createNMConfig();
     nm.init(conf);
     try {
