@@ -339,12 +339,12 @@ public abstract class AbstractService implements Service {
   }
 
   @Override
-  public void registerServiceListener(ServiceStateChangeListener l) {
+  public void register(ServiceStateChangeListener l) {
     listeners.add(l);
   }
 
   @Override
-  public void unregisterServiceListener(ServiceStateChangeListener l) {
+  public void unregister(ServiceStateChangeListener l) {
     listeners.remove(l);
   }
 

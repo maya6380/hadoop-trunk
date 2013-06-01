@@ -132,13 +132,13 @@ public interface Service extends Closeable {
    * Register an instance of the service state change events.
    * @param listener a new listener
    */
-  void registerServiceListener(ServiceStateChangeListener listener);
+  void register(ServiceStateChangeListener listener);
 
   /**
    * Unregister a previously instance of the service state change events.
    * @param listener the listener to unregister.
    */
-  void unregisterServiceListener(ServiceStateChangeListener listener);
+  void unregister(ServiceStateChangeListener listener);
 
   /**
    * Get the name of this service.
