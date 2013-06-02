@@ -153,24 +153,37 @@ public class TestNMClient {
   @After
   public void tearDown() {
     rmClient.stop();
+    yarnClient.stop();
+    yarnCluster.stop();
+  }
 
+  private void stopNmClient(boolean stopContainers) {
+    assertNotNull("Null nmClient", nmClient);
     // leave one unclosed
     assertEquals(1, nmClient.startedContainers.size());
     // default true
     assertTrue(nmClient.cleanupRunningContainers.get());
-    // don't stop the running containers
-    nmClient.cleanupRunningContainersOnStop(false);
-    assertFalse(nmClient.cleanupRunningContainers.get());
+    nmClient.cleanupRunningContainersOnStop(stopContainers);
+    assertEquals(stopContainers, nmClient.cleanupRunningContainers.get());
     nmClient.stop();
-    assertTrue(nmClient.startedContainers.size() > 0);
-    // stop the running containers
-    nmClient.cleanupRunningContainersOnStop(true);
-    assertTrue(nmClient.cleanupRunningContainers.get());
-    nmClient.stop();
-    assertEquals(0, nmClient.startedContainers.size());
+  }
 
-    yarnClient.stop();
-    yarnCluster.stop();
+  @Test (timeout = 60000)
+  public void testNMClientNoCleanupOnStop()
+      throws YarnException, IOException {
+
+    rmClient.registerApplicationMaster("Host", 10000, "");
+
+    testContainerManagement(nmClient, allocateContainers(rmClient, 5));
+
+    rmClient.unregisterApplicationMaster(FinalApplicationStatus.SUCCEEDED,
+                                         null, null);
+    // don't stop the running containers
+    stopNmClient(false);
+    assertFalse(nmClient.startedContainers. isEmpty());
+    //now cleanup
+    nmClient.cleanupRunningContainers();
+    assertEquals(0, nmClient.startedContainers.size());
   }
 
   @Test (timeout = 60000)
@@ -183,6 +196,11 @@ public class TestNMClient {
 
     rmClient.unregisterApplicationMaster(FinalApplicationStatus.SUCCEEDED,
         null, null);
+    // stop the running containers on close
+    assertFalse(nmClient.startedContainers.isEmpty());
+    nmClient.cleanupRunningContainersOnStop(true);
+    assertTrue(nmClient.cleanupRunningContainers.get());
+    nmClient.stop();
   }
 
   private Set<Container> allocateContainers(
