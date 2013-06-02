@@ -807,7 +807,7 @@ public class TestNodeStatusUpdater {
                                                        Dispatcher dispatcher,
                                                        NodeHealthCheckerService healthChecker);
   }
-  
+
   @Test
   public void testNMShutdownForRegistrationFailure() throws Exception {
 

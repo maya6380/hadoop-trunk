@@ -180,7 +180,7 @@ public class TestServiceLifecycle extends ServiceAssert {
 
   /**
    * Show that if the service failed during an init
-   * operation, stop was called. 
+   * operation, stop was called.
    */
 
   @Test
@@ -352,7 +352,7 @@ public class TestServiceLifecycle extends ServiceAssert {
     //and expect an event count of exactly two
     assertEventCount(listener, 2);
   }
-  
+
   @Test
   public void testStartInInitService() throws Throwable {
     Service service = new StartInInitService();
@@ -362,7 +362,7 @@ public class TestServiceLifecycle extends ServiceAssert {
     assertServiceInState(service, Service.STATE.STARTED);
     assertEventCount(listener, 1);
   }
-    
+
   @Test
   public void testStopInInitService() throws Throwable {
     Service service = new StopInInitService();
@@ -372,13 +372,13 @@ public class TestServiceLifecycle extends ServiceAssert {
     assertServiceInState(service, Service.STATE.STOPPED);
     assertEventCount(listener, 1);
   }
-  
+
   /**
    * Listener that wakes up all threads waiting on it
    */
   private static class NotifyingListener implements ServiceStateChangeListener {
     public Service.STATE notifyingState = Service.STATE.NOTINITED;
-    
+
     public synchronized void stateChanged(Service service) {
       notifyingState = service.getServiceState();
       this.notifyAll();
@@ -412,7 +412,7 @@ public class TestServiceLifecycle extends ServiceAssert {
       this.stop();
     }
   }
-  
+
   /**
    * Service that terminates itself in startup
    */
