@@ -143,9 +143,9 @@ public class NMClientAsync extends AbstractService {
       new LinkedBlockingQueue<ContainerEvent>();
 
   protected NMClient client;
-  protected final CallbackHandler callbackHandler;
+  protected CallbackHandler callbackHandler;
 
-  protected final ConcurrentMap<ContainerId, StatefulContainer> containers =
+  protected ConcurrentMap<ContainerId, StatefulContainer> containers =
       new ConcurrentHashMap<ContainerId, StatefulContainer>();
 
   public NMClientAsync(CallbackHandler callbackHandler) {
