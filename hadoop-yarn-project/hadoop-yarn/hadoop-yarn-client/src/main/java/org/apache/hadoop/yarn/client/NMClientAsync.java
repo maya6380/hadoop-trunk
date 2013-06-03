@@ -264,13 +264,15 @@ public class NMClientAsync extends AbstractService {
     if (threadPool != null) {
       threadPool.shutdownNow();
     }
-    // If NMClientImpl doesn't stop running containers, the states doesn't
-    // need to be cleared.
-    if (!(client instanceof NMClientImpl) ||
-        ((NMClientImpl) client).cleanupRunningContainers.get()) {
-      containers.clear();
-    }
     if (client != null) {
+      // If NMClientImpl doesn't stop running containers, the states doesn't
+      // need to be cleared.
+      if (!(client instanceof NMClientImpl) ||
+          ((NMClientImpl) client).cleanupRunningContainers.get()) {
+        if (containers != null) {
+          containers.clear();
+        }
+      }
       client.stop();
     }
     super.serviceStop();
