@@ -42,7 +42,6 @@ import org.apache.hadoop.yarn.server.nodemanager.ContainerExecutor;
 import org.apache.hadoop.yarn.server.nodemanager.DefaultContainerExecutor;
 import org.apache.hadoop.yarn.service.AbstractService;
 import org.apache.hadoop.yarn.service.Service;
-import org.apache.hadoop.yarn.service.ServiceOperations;
 
 /**
  * Configures and starts the MR-specific components in the YARN cluster.
@@ -181,7 +180,9 @@ public class MiniMRYarnCluster extends MiniYARNCluster {
 
     @Override
     public synchronized void serviceStop() throws Exception {
-      ServiceOperations.stop(historyServer);
+      if (historyServer != null) {
+        historyServer.stop();
+      }
       super.serviceStop();
     }
   }
