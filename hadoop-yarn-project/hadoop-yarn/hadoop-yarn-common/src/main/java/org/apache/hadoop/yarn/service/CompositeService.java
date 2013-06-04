@@ -19,7 +19,6 @@
 package org.apache.hadoop.yarn.service;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -42,35 +41,57 @@ public class CompositeService extends AbstractService {
    * Irrespective of this policy, if a child service fails during
    * its init() or start() operations, it will have stop() called on it.
    */
-  protected static final boolean STOP_ONLY_STARTED_SERVICES = true;
+  protected static final boolean STOP_ONLY_STARTED_SERVICES = false;
 
-  private List<Service> serviceList = new ArrayList<Service>();
+  private final List<Service> serviceList = new ArrayList<Service>();
 
   public CompositeService(String name) {
     super(name);
   }
 
-  public Collection<Service> getServices() {
-    return Collections.unmodifiableList(serviceList);
+  /**
+   * Get an unmodifiable list of services
+   * @return a list of child services at the time of invocation -
+   * added services will not be picked up.
+   */
+  public List<Service> getServices() {
+    synchronized (serviceList) {
+      return Collections.unmodifiableList(serviceList);
+    }
   }
 
-  protected synchronized void addService(Service service) {
-    serviceList.add(service);
+  protected void addService(Service service) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Adding service " + service.getName());
+    }
+    synchronized (serviceList) {
+      serviceList.add(service);
+    }
   }
 
   protected synchronized boolean removeService(Service service) {
-    return serviceList.remove(service);
+    synchronized (serviceList) {
+      return serviceList.add(service);
+    }
   }
 
   protected void serviceInit(Configuration conf) throws Exception {
-    for (Service service : serviceList) {
+    List<Service> services = getServices();
+    if (LOG.isDebugEnabled()) {
+      LOG.debug(getName() + ": initing services, size=" + services.size());
+    }
+    for (Service service : services) {
       service.init(conf);
     }
     super.serviceInit(conf);
   }
 
   protected void serviceStart() throws Exception {
-    for (Service service : serviceList) {
+    List<Service> services = getServices();
+    if (LOG.isDebugEnabled()) {
+      LOG.debug(getName() + ": starting services, size=" + services.size());
+    }
+    for (Service service : services) {
       // start the service. If this fails that service
       // will be stopped and an exception raised
       service.start();
@@ -78,9 +99,13 @@ public class CompositeService extends AbstractService {
     super.serviceStart();
   }
 
-  protected void serviceStop() throws Exception{
+  protected void serviceStop() throws Exception {
     //stop all services that were started
-    stop(serviceList.size(), STOP_ONLY_STARTED_SERVICES);
+    int numOfServicesToStop = serviceList.size();
+    if (LOG.isDebugEnabled()) {
+      LOG.debug(getName() + ": stopping services, size=" + numOfServicesToStop);
+    }
+    stop(numOfServicesToStop, STOP_ONLY_STARTED_SERVICES);
     super.serviceStop();
   }
 
@@ -97,10 +122,13 @@ public class CompositeService extends AbstractService {
                                  boolean stopOnlyStartedServices) {
     // stop in reverse order of start
     Exception firstException = null;
+    List<Service> services = getServices();
     for (int i = numOfServicesStarted - 1; i >= 0; i--) {
-      Service service = serviceList.get(i);
+      Service service = services.get(i);
       STATE state = service.getServiceState();
-      if (!stopOnlyStartedServices || state == STATE.STARTED) {
+      //depending on the stop police
+      if (state == STATE.STARTED 
+         || (!stopOnlyStartedServices && state == STATE.INITED)) {
         Exception ex = ServiceOperations.stopQuietly(LOG, service);
         if (ex != null && firstException == null) {
           firstException = ex;

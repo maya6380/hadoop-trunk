@@ -25,6 +25,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.YarnRuntimeException;
+import org.apache.hadoop.yarn.service.BreakableService;
 import org.apache.hadoop.yarn.service.CompositeService;
 import org.apache.hadoop.yarn.service.Service;
 import org.apache.hadoop.yarn.service.Service.STATE;
@@ -154,7 +155,7 @@ public class TestCompositeService {
       fail("Exception should have been thrown due to startup failure of last service");
     } catch (YarnRuntimeException e) {
       for (int i = 0; i < NUM_OF_SERVICES - 1; i++) {
-        if (i >= FAILED_SERVICE_SEQ_NUMBER) {
+        if (i >= FAILED_SERVICE_SEQ_NUMBER && STOP_ONLY_STARTED_SERVICES) {
           // Failed service state should be INITED
           assertEquals("Service state should have been ", STATE.INITED,
               services[NUM_OF_SERVICES - 1].getServiceState());
@@ -163,6 +164,7 @@ public class TestCompositeService {
               services[i].getServiceState());
         }
       }
+
     }
   }
 
@@ -230,7 +232,7 @@ public class TestCompositeService {
   }
 
   /**
-   * Shut down from not-inited
+   * Shut down from not-inited: expect nothing to have happened
    */
   @Test
   public void testServiceStopFromNotInited() {
@@ -245,21 +247,7 @@ public class TestCompositeService {
     CompositeServiceImpl[] services = serviceManager.getServices().toArray(
       new CompositeServiceImpl[0]);
     serviceManager.stop();
-    if (STOP_ONLY_STARTED_SERVICES) {
-      //this policy => no services were stopped
-      assertInState(STATE.NOTINITED, services);
-    } else {
-      //this policy => all services were stopped in reverse order
-      assertInState(STATE.STOPPED, services);
-      // Verify the stop() call sequence numbers for every service
-      for (int i = 0; i < NUM_OF_SERVICES; i++) {
-        assertEquals("For " + services[i]
-                     +
-                     " service, stop() call sequence number should have been ",
-                     ((NUM_OF_SERVICES - 1) - i),
-                     services[i].getCallSequenceNumber());
-      }
-    }
+    assertInState(STATE.NOTINITED, services);
   }
 
   /**
@@ -317,7 +305,32 @@ public class TestCompositeService {
     serviceManager.stop();
   }
 
-    public static class CompositeServiceImpl extends CompositeService {
+  @Test
+  public void testAddServiceInInit() throws Throwable {
+    BreakableService child = new BreakableService();
+    assertInState(STATE.NOTINITED, child);
+    CompositeServiceAddingAChild composite =
+      new CompositeServiceAddingAChild(child);
+    composite.init(new Configuration());
+    assertInState(STATE.INITED, child);
+  }
+  
+  public static class CompositeServiceAddingAChild extends CompositeService{
+    Service child;
+
+    public CompositeServiceAddingAChild(Service child) {
+      super("CompositeServiceAddingAChild");
+      this.child = child;
+    }
+
+    @Override
+    protected void serviceInit(Configuration conf) throws Exception {
+      addService(child);
+      super.serviceInit(conf);
+    }
+  }
+  
+  public static class CompositeServiceImpl extends CompositeService {
 
     public static boolean isPolicyToStopOnlyStartedServices() {
       return STOP_ONLY_STARTED_SERVICES;
