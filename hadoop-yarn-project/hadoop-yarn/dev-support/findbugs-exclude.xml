@@ -23,6 +23,11 @@
   <Match>
     <Class name="~org\.apache\.hadoop\.yarn\.ipc\.RpcProtos.*" />
   </Match>
+ 
+  <Match>
+    <Class name="org.apache.hadoop.yarn.service.AbstractService" />
+    <Bug pattern="JLM_JSR166_UTILCONCURRENT_MONITORENTER" />
+  </Match>
 
   <!-- Ignore unchecked Event casts -->
   <Match>

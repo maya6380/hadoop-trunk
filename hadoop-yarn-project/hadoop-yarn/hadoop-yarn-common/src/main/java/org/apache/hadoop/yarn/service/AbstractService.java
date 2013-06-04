@@ -207,8 +207,8 @@ public abstract class AbstractService implements Service {
         throw ServiceStateException.convert(e);
       } finally {
         //report that the service has terminated
+        terminationNotification.set(true);
         synchronized (terminationNotification) {
-          terminationNotification.set(true);
           terminationNotification.notifyAll();
         }
         //notify anything listening for events
@@ -260,21 +260,21 @@ public abstract class AbstractService implements Service {
 
   @Override
   public final boolean waitForServiceToStop(long timeout) {
-    synchronized (terminationNotification) {
-      boolean completed = terminationNotification.get();
-      while (!completed) {
-        try {
+    boolean completed = terminationNotification.get();
+    while (!completed) {
+      try {
+        synchronized(terminationNotification) {
           terminationNotification.wait(timeout);
-          //here there has been a timeout, the object has terminated,
-          //or there has been a spurious wakeup (which we ignore)
-          completed = true;
-        } catch (InterruptedException e) {
-          //interrupted; have another look at the flag
-          completed = terminationNotification.get();
         }
+        // here there has been a timeout, the object has terminated,
+        // or there has been a spurious wakeup (which we ignore)
+        completed = true;
+      } catch (InterruptedException e) {
+        // interrupted; have another look at the flag
+        completed = terminationNotification.get();
       }
-      return terminationNotification.get();
     }
+    return terminationNotification.get();
   }
 
   /* ===================================================================== */
