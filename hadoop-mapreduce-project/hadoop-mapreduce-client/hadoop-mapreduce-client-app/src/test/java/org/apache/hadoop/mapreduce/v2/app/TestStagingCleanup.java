@@ -56,6 +56,7 @@ import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.factories.RecordFactory;
 import org.apache.hadoop.yarn.factory.providers.RecordFactoryProvider;
 import org.apache.hadoop.yarn.service.AbstractService;
+import org.apache.hadoop.yarn.service.Service;
 import org.junit.Test;
 
 
@@ -89,16 +90,12 @@ import org.junit.Test;
      Assert.assertTrue(MRJobConfig.DEFAULT_MR_AM_MAX_ATTEMPTS > 1);
      MRAppMaster appMaster = new TestMRApp(attemptId, mockAlloc,
          JobStateInternal.RUNNING, MRJobConfig.DEFAULT_MR_AM_MAX_ATTEMPTS);
-     try {
-       appMaster.init(conf);
-       appMaster.start();
-       appMaster.shutDownJob();
-       //test whether notifyIsLastAMRetry called
-       Assert.assertEquals(true, ((TestMRApp)appMaster).getTestIsLastAMRetry());
-       verify(fs).delete(stagingJobPath, true);
-     } finally {
-       appMaster.stop();
-     }
+     appMaster.init(conf);
+     appMaster.start();
+     appMaster.shutDownJob();
+     //test whether notifyIsLastAMRetry called
+     Assert.assertEquals(true, ((TestMRApp)appMaster).getTestIsLastAMRetry());
+     verify(fs).delete(stagingJobPath, true);
    }
 
    @Test (timeout = 30000)
@@ -116,17 +113,13 @@ import org.junit.Test;
      Assert.assertTrue(MRJobConfig.DEFAULT_MR_AM_MAX_ATTEMPTS > 1);
      MRAppMaster appMaster = new TestMRApp(attemptId, mockAlloc,
          JobStateInternal.REBOOT, MRJobConfig.DEFAULT_MR_AM_MAX_ATTEMPTS);
-     try {
-       appMaster.init(conf);
-       appMaster.start();
-       //shutdown the job, not the lastRetry
-       appMaster.shutDownJob();
-       //test whether notifyIsLastAMRetry called
-       Assert.assertEquals(false, ((TestMRApp)appMaster).getTestIsLastAMRetry());
-       verify(fs, times(0)).delete(stagingJobPath, true);
-     } catch (IOException e) {
-       appMaster.stop();
-     }
+     appMaster.init(conf);
+     appMaster.start();
+     //shutdown the job, not the lastRetry
+     appMaster.shutDownJob();
+     //test whether notifyIsLastAMRetry called
+     Assert.assertEquals(false, ((TestMRApp)appMaster).getTestIsLastAMRetry());
+     verify(fs, times(0)).delete(stagingJobPath, true);
    }
 
    @Test (timeout = 30000)
@@ -143,17 +136,13 @@ import org.junit.Test;
      ContainerAllocator mockAlloc = mock(ContainerAllocator.class);
      MRAppMaster appMaster = new TestMRApp(attemptId, mockAlloc,
          JobStateInternal.REBOOT, 1); //no retry
-     try {
-       appMaster.init(conf);
-       appMaster.start();
-       //shutdown the job, is lastRetry
-       appMaster.shutDownJob();
-       //test whether notifyIsLastAMRetry called
-       Assert.assertEquals(true, ((TestMRApp)appMaster).getTestIsLastAMRetry());
-       verify(fs).delete(stagingJobPath, true);
-     } finally {
-       appMaster.stop();
-     }
+     appMaster.init(conf);
+     appMaster.start();
+     //shutdown the job, is lastRetry
+     appMaster.shutDownJob();
+     //test whether notifyIsLastAMRetry called
+     Assert.assertEquals(true, ((TestMRApp)appMaster).getTestIsLastAMRetry());
+     verify(fs).delete(stagingJobPath, true);
    }
    
    @Test (timeout = 30000)
@@ -197,10 +186,13 @@ import org.junit.Test;
      ContainerAllocator mockAlloc = mock(ContainerAllocator.class);
      MRAppMaster appMaster = new TestMRApp(attemptId, mockAlloc, 1); //no retry
      appMaster.init(conf);
+     assertTrue("appMaster.isLastAMRetry() is false", appMaster.isLastAMRetry());
      //simulate the process being killed
      MRAppMaster.MRAppMasterShutdownHook hook = 
        new MRAppMaster.MRAppMasterShutdownHook(appMaster);
      hook.run();
+     assertTrue("MRAppMaster isn't stopped",
+                appMaster.isInState(Service.STATE.STOPPED));
      verify(fs).delete(stagingJobPath, true);
    }
 
