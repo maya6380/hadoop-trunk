@@ -280,7 +280,7 @@ public class JobHistoryEventHandler extends AbstractService
           }
         }
       }
-    });
+    }, "eventHandlingThread");
     eventHandlingThread.start();
     super.serviceStart();
   }
