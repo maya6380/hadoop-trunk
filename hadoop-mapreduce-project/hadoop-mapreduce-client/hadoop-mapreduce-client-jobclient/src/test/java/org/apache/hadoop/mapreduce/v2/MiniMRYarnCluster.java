@@ -157,8 +157,6 @@ public class MiniMRYarnCluster extends MiniYARNCluster {
           throw new IOException("HistoryServer failed to start");
         }
         super.serviceStart();
-      } catch (Exception t) {
-        throw t;
       } catch (Throwable t) {
         throw new YarnRuntimeException(t);
       }
